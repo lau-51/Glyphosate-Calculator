@@ -1,0 +1,6 @@
+{
+  "name": "Calculateur d'application de Glyphosate",
+  "description": "Un calculateur professionnel de dosage et de traçabilité de l'herbicide glyphosate pour l'agriculture (grandes cultures, viticulture) et le jardinage.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

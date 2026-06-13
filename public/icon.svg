@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <!-- Background with slight rounded luxury slate look -->
+  <rect width="512" height="512" rx="128" fill="#0f172a" />
+  
+  <!-- Outer glowing rings of precision spraying target -->
+  <circle cx="256" cy="270" r="140" fill="none" stroke="#1e293b" stroke-width="8" />
+  <circle cx="256" cy="270" r="180" fill="none" stroke="#1e293b" stroke-width="4" stroke-dasharray="16, 12" />
+  
+  <!-- Droplet Leaf (representing clean dosage and target plants) -->
+  <path d="M256 120 C190 220 150 280 150 340 A106 106 0 0 0 362 340 C362 280 322 220 256 120 Z" fill="url(#glow)" />
+  
+  <!-- Sleek leaf vein & crosshair intersection -->
+  <path d="M256 160 V390" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.25" />
+  <path d="M190 320 Q256 340 322 320" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.25" />
+  
+  <!-- Centered precision node -->
+  <circle cx="256" cy="310" r="28" fill="#ffffff" />
+  <circle cx="256" cy="310" r="14" fill="#059669" />
+</svg>

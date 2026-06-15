@@ -1,11 +1,11 @@
 const CACHE_NAME = 'roundup-calc-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon.svg',
-  '/icon-192.png',
-  '/icon-512.png'
+  './',
+  'index.html',
+  'manifest.json',
+  'icon.svg',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
 // Installe le service worker et pré-cache les ressources statiques de base

@@ -59,7 +59,28 @@ Pour générer la version optimisée et finale, prête à être mise en ligne su
 
 ---
 
-## 📄 Étape 5 : Exporter ce guide en PDF
+## 🌐 Étape 5 : Déploiement Automatique sur GitHub Pages
+
+L'application est préconfigurée avec un script d'action automatisé (**CI/CD**). Pour héberger gratuitement votre application en tant que PWA sur **GitHub Pages** :
+
+1. Créez un nouveau dépôt sur votre compte GitHub (par exemple nommé `calculateur-roundup`).
+2. Ouvrez votre terminal à la racine de votre dossier et exécutez ces commandes pour pousser le code vers GitHub (remplacez `VOTRE_PSEUDO` par votre nom d'utilisateur GitHub) :
+   ```bash
+   git init
+   git add .
+   git commit -m "Première version PWA avec chemins relatifs"
+   git branch -M main
+   git remote add origin https://github.com/VOTRE_PSEUDO/calculateur-roundup.git
+   git push -u origin main
+   ```
+3. Sur l'interface de votre dépôt GitHub sur le web, allez dans l'onglet **Settings** (Paramètres) -> menu de gauche **Pages** (sous la section *Code and automation*).
+4. Dans la rubrique **Build and deployment** (Construction et déploiement), changez l'option **Source** : sélectionnez **GitHub Actions** à la place de "Deploy from a branch".
+5. C'est tout ! Chaque mise à jour (push) déclenchera l'action qui compilera et déploiera le site. Votre application sera accessible à l'adresse suivante :  
+   `https://VOTRE_PSEUDO.github.io/calculateur-roundup/`
+
+---
+
+## 📄 Étape 6 : Exporter ce guide en PDF
 
 Pour transformer ce guide en document PDF imprimable :
 - **Via VS Code / Markdown Editor** : Cliquez droit sur ce fichier `README.md`, choisissez *Markdown PDF: Export (pdf)* si vous avez l'extension adéquate.

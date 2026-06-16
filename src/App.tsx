@@ -175,8 +175,8 @@ export default function App() {
   // Regulatory treatment sheet inputs
   const [ficheInputs, setFicheInputs] = useState({
     date: new Date().toISOString().split('T')[0],
-    applicateur: 'L. Autreau',
-    parcelle: 'Parcelle Nord - Vignes',
+    applicateur: 'Votre Nom',
+    parcelle: 'Nom de la parcelle',
     produitNom: 'Substitut Biocontrôle / Glyphosate',
     zntRespect: true,
     epiComplet: true,
@@ -190,11 +190,11 @@ export default function App() {
   // Default Exploitation Data
   const DEFAULT_EXPLOITATION_DATA: ExploitationData = {
     id: 'exp-1',
-    nom: 'Domaine de Bel Air',
+    nom: 'Votre Domaine',
     agrement: 'AG-12345-6789',
     applicators: [
-      { id: '1', name: 'Jean Dupont', certiphyto: 'CP-9876-001' },
-      { id: '2', name: 'L. Autreau', certiphyto: 'CP-4321-002' }
+      { id: '1', name: 'Applicateur 01', certiphyto: 'CP-9876-001' },
+      { id: '2', name: 'Applicateur 02', certiphyto: 'CP-4321-002' }
     ],
     parcelles: [
       { id: 'p1', name: "Les Côtes d'Or", village: 'Gevrey', cru: 'Premier Cru', surface: 3.5, cepage: 'Pinot Noir' },

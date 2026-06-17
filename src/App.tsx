@@ -175,8 +175,8 @@ export default function App() {
   // Regulatory treatment sheet inputs
   const [ficheInputs, setFicheInputs] = useState({
     date: new Date().toISOString().split('T')[0],
-    applicateur: 'Votre Nom',
-    parcelle: 'Nom de la parcelle',
+    applicateur: 'L. Autreau',
+    parcelle: 'Parcelle Nord - Vignes',
     produitNom: 'Substitut Biocontrôle / Glyphosate',
     zntRespect: true,
     epiComplet: true,
@@ -190,19 +190,19 @@ export default function App() {
   // Default Exploitation Data
   const DEFAULT_EXPLOITATION_DATA: ExploitationData = {
     id: 'exp-1',
-    nom: 'Votre Domaine',
+    nom: 'Domaine de Bel Air',
     agrement: 'AG-12345-6789',
     applicators: [
-      { id: '1', name: 'Applicateur 01', certiphyto: 'CP-9876-001' },
-      { id: '2', name: 'Applicateur 02', certiphyto: 'CP-4321-002' }
+      { id: '1', name: 'Jean Dupont', certiphyto: 'CP-9876-001' },
+      { id: '2', name: 'L. Autreau', certiphyto: 'CP-4321-002' }
     ],
     parcelles: [
-      { id: 'p1', name: "Vigne 01", village: 'Champillon', cru: 'Premier Cru', surface: 3.5, cepage: 'Pinot Noir' },
-      { id: 'p2', name: 'Vigne 02', village: 'Chouilly', cru: 'Grand Cru', surface: 1.8, cepage: 'Chardonnay' },
-      { id: 'p3', name: 'Vigne 03', village: 'Verneuil', cru: 'AOP Champagne', surface: 5.2, cepage: 'Pinot Meunier' }
+      { id: 'p1', name: "Les Côtes d'Or", village: 'Gevrey', cru: 'Premier Cru', surface: 3.5, cepage: 'Pinot Noir' },
+      { id: 'p2', name: 'Sous la Roche', village: 'Chablis', cru: 'Grand Cru', surface: 1.8, cepage: 'Chardonnay' },
+      { id: 'p3', name: 'Le Closeau', village: 'Nuits-Saint-Georges', cru: 'Village', surface: 5.2, cepage: 'Pinot Noir' }
     ],
     groupements: [
-      { id: 'g1', name: 'Groupe 01', parcelleIds: ['p1', 'p3'] }
+      { id: 'g1', name: 'Vignes Rouges', parcelleIds: ['p1', 'p3'] }
     ],
     hveCropType: 'viticulture',
     manualIftTreatments: []

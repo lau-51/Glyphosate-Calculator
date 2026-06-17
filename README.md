@@ -78,6 +78,17 @@ L'application est préconfigurée avec un script d'action automatisé (**CI/CD**
 5. C'est tout ! Chaque mise à jour (push) déclenchera l'action qui compilera et déploiera le site. Votre application sera accessible à l'adresse suivante :  
    `https://VOTRE_PSEUDO.github.io/calculateur-roundup/`
 
+### 🔧 Note sur la configuration de Firebase (Optionnelle)
+Pour éviter tout échec de compilation lors de l'export local ou sur GitHub Actions (où le fichier privé `firebase-applet-config.json` peut être manquant ou non téléchargé), l'authentification et Firebase ont été configurés de manière résiliente :
+- **Sans config additionnelle** : L'application compile et fonctionne de manière autonome (100% hors-ligne dans le navigateur).
+- **Avec votre propre projet Firebase (PWA hébergée)** : Si vous désirez connecter votre base ou authentification Firebase sur votre propre projet, vous n'avez pas besoin d'un fichier JSON. Spécifiez simplement vos identifiants Firebase via les variables d'environnement dans votre plateforme de déploiement (ou dans votre fichier `.env`) :
+  - `VITE_FIREBASE_API_KEY`
+  - `VITE_FIREBASE_AUTH_DOMAIN`
+  - `VITE_FIREBASE_PROJECT_ID`
+  - `VITE_FIREBASE_STORAGE_BUCKET`
+  - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+  - `VITE_FIREBASE_APP_ID`
+
 ---
 
 ## 📄 Étape 6 : Exporter ce guide en PDF

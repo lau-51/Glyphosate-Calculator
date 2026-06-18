@@ -290,6 +290,8 @@ export default function App() {
     productConcentration: 360 // g/L
   });
 
+  const [agriCropType, setAgriCropType] = useState<'grandes_cultures' | 'viticulture' | 'arboriculture'>('grandes_cultures');
+
   // Jardin state
   const [jardinInputs, setJardinInputs] = useState<JardinInputs>({
     surface: 200,             // m²
@@ -3243,6 +3245,157 @@ export default function App() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* EU Regulatory Compliance Alert Module */}
+                  <div className={`border p-5 rounded-2xl transition-all shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-slate-900 border-slate-800 text-slate-100' 
+                      : 'bg-white border-slate-200 text-slate-800'
+                  }`}>
+                    <div className="flex items-center justify-between mb-3 border-b pb-2.5 border-dashed border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-x-2">
+                        <Scale className={`w-5 h-5 ${
+                          (agriInputs.doseProduct * agriInputs.productConcentration) > (agriCropType === 'grandes_cultures' ? 1080 : agriCropType === 'viticulture' ? 450 : 900)
+                            ? 'text-rose-500 animate-pulse'
+                            : 'text-emerald-500'
+                        }`} />
+                        <h4 className="text-xs font-bold uppercase tracking-wider">
+                          Vérificateur de Dose (Normes Européenne & ANSES)
+                        </h4>
+                      </div>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                        (agriInputs.doseProduct * agriInputs.productConcentration) > (agriCropType === 'grandes_cultures' ? 1080 : agriCropType === 'viticulture' ? 450 : 900)
+                          ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                          : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                      }`}>
+                        {(agriInputs.doseProduct * agriInputs.productConcentration) > (agriCropType === 'grandes_cultures' ? 1080 : agriCropType === 'viticulture' ? 450 : 900)
+                          ? 'Non conforme'
+                          : 'Dose Conforme'
+                      }
+                      </span>
+                    </div>
+
+                    <p className={`text-xs mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Le glyphosate est soumis à des limites réglementaires de dose maximale de matière active par hectare et par an en Europe et validées par l'ANSES. Sélectionnez votre culture :
+                    </p>
+
+                    {/* Culture selector tabs */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {[
+                        { id: 'grandes_cultures', label: 'Grandes Cultures', limit: 1080, desc: 'Céréales, Colza, Betteraves...' },
+                        { id: 'viticulture', label: 'Viticulture', limit: 450, desc: 'Vignes (inter-rang de vigne)' },
+                        { id: 'arboriculture', label: 'Arboriculture', limit: 900, desc: 'Vergers et arbres fruitiers' }
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setAgriCropType(item.id as any)}
+                          className={`p-2 rounded-xl text-center border transition-all text-[11px] font-medium flex flex-col justify-center items-center shadow-xs cursor-pointer ${
+                            agriCropType === item.id
+                              ? 'bg-emerald-500 text-white border-emerald-500 ring-2 ring-emerald-500/15'
+                              : isDarkMode
+                                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-755'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="font-bold text-[11px]">{item.label}</span>
+                          <span className={`text-[9px] font-mono mt-0.5 ${agriCropType === item.id ? 'text-emerald-100' : 'text-slate-400 dark:text-slate-500'}`}>
+                            {item.limit} g s.a./ha
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Calculation Metrics */}
+                    {(() => {
+                      const doseMatiereActive = Math.round(agriInputs.doseProduct * agriInputs.productConcentration);
+                      const currentLimit = 
+                        agriCropType === 'grandes_cultures' ? 1080 :
+                        agriCropType === 'viticulture' ? 450 : 900;
+                      const percentOfLimit = Math.round((doseMatiereActive / currentLimit) * 100);
+                      const isExceeded = doseMatiereActive > currentLimit;
+
+                      return (
+                        <div className="space-y-3.5">
+                          {/* Progress/gauge bar */}
+                          <div>
+                            <div className="flex justify-between text-[11px] mb-1 font-mono">
+                              <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                                Dose appliquée : <strong className={isExceeded ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>{doseMatiereActive} g/ha</strong>
+                              </span>
+                              <span className="text-slate-400">
+                                Seuil : <strong>{currentLimit} g/ha</strong>
+                              </span>
+                            </div>
+                            <div className={`w-full h-3 rounded-full overflow-hidden flex ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                              <motion.div
+                                className={`h-full rounded-full ${isExceeded ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(percentOfLimit, 100)}%` }}
+                                transition={{ duration: 0.5 }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[9px] mt-1 text-slate-400 font-mono">
+                              <span>0 g s.a. (substance active)</span>
+                              <span className={isExceeded ? 'text-rose-500 font-bold' : 'text-emerald-500 font-bold'}>
+                                {percentOfLimit}% de la limite
+                              </span>
+                              <span>{currentLimit} g/ha (Max)</span>
+                            </div>
+                          </div>
+
+                          {/* Dynamic Feedback Box */}
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${agriCropType}-${doseMatiereActive}`}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
+                                isExceeded
+                                  ? isDarkMode
+                                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                                  : isDarkMode
+                                    ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-200'
+                                    : 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800'
+                              }`}
+                            >
+                              <div className="flex items-start gap-x-2.5">
+                                <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${isExceeded ? 'text-rose-500 animate-bounce' : 'text-emerald-500'}`} />
+                                <div className="space-y-1">
+                                  <p className="font-bold text-[12px]">
+                                    {isExceeded 
+                                      ? `Attention : Dépassement légal de ${doseMatiereActive - currentLimit} g/ha !`
+                                      : 'Dose conforme aux réglementations'
+                                    }
+                                  </p>
+                                  <p className="text-[11px] opacity-90">
+                                    {isExceeded
+                                      ? `Votre traitement projette d'appliquer ${doseMatiereActive} g de substance active (Glyphosate) par hectare. Cela dépasse la limite maximale réglementée par l'ANSES de ${currentLimit} g/ha (soit un taux de ${percentOfLimit}% de la dose réglementaire autorisée).`
+                                      : `Votre traitement appliquera ${doseMatiereActive} g de substance active (Glyphosate) par hectare, soit ${percentOfLimit}% de la limite réglementaire maximale d'usage annuel de ${currentLimit} g/ha.`
+                                    }
+                                  </p>
+                                  {isExceeded && (
+                                    <div className={`mt-2 p-2 rounded-lg border text-[10px] ${
+                                      isDarkMode ? 'bg-rose-950/40 border-rose-800/20' : 'bg-white border-rose-100'
+                                    }`}>
+                                      <span className="font-bold">💡 Solutions de conformité :</span>
+                                      <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-90">
+                                        <li>Diminuez la dose produit par hectare à maximum <strong className="font-bold font-mono">{(currentLimit / agriInputs.productConcentration).toFixed(2)} L/ha</strong> pour cette concentration.</li>
+                                        <li>Envisagez d'utiliser une formulation plus concentrée ou d'ajuster les buses d'injection.</li>
+                                        <li>Associez un désherbage mécanique complémentaire (travail du sol) pour combler le besoin.</li>
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Tank split plan & Graphical visualization side-by-side */}

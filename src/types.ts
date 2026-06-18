@@ -1,4 +1,4 @@
-export type AppMode = 'agri' | 'jardin' | 'weather' | 'safety' | 'ai' | 'dilution' | 'calendar' | 'drift' | 'exploitation' | 'help' | 'phytos';
+export type AppMode = 'agri' | 'jardin' | 'weather' | 'safety' | 'ai' | 'dilution' | 'calendar' | 'drift' | 'exploitation' | 'help';
 
 export interface Applicator {
   id: string;

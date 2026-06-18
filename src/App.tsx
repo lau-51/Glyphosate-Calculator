@@ -37,7 +37,6 @@ import {
   Printer,
   FileText,
   Bot,
-  Globe,
   Upload,
   Trash2,
   Loader2,
@@ -61,7 +60,6 @@ import ZntCalculator from './components/ZntCalculator';
 import TreatmentCalendar from './components/TreatmentCalendar';
 import HveIftDashboard from './components/HveIftDashboard';
 import HelpTutorials from './components/HelpTutorials';
-import PhytosManager from './components/PhytosManager';
 import { AppMode, AgriInputs, JardinInputs, ExploitationData, Applicator, Parcelle, ParcelleGroup, HistoricalFiche, ManualIftTreatment } from './types';
 import { 
   calculateAgri, 
@@ -1749,7 +1747,7 @@ export default function App() {
           )}
 
           {/* Primary Screen Tabs */}
-          <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-11 gap-2 mb-6">
+          <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-10 gap-2 mb-6">
             <button
               id="tab-exploitation"
               onClick={() => setMode('exploitation')}
@@ -1868,21 +1866,6 @@ export default function App() {
             >
               <Wind className="w-4 h-4" />
               <span>Calculateur de Dérive & ZNT</span>
-            </button>
-
-            <button
-              id="tab-phytos"
-              onClick={() => setMode('phytos')}
-              className={`flex items-center justify-center gap-x-2 py-3.5 px-3 rounded-2xl font-medium text-sm transition-all duration-200 border cursor-pointer ${
-                mode === 'phytos'
-                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm font-semibold'
-                  : (isDarkMode 
-                      ? 'bg-slate-900 border-slate-800 hover:bg-slate-850 text-slate-400 hover:text-white' 
-                      : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900')
-              }`}
-            >
-              <Globe className="w-4 h-4 text-emerald-500" />
-              <span>Traitements Phytos</span>
             </button>
 
             <button
@@ -5244,24 +5227,6 @@ export default function App() {
                     )}
                   </div>
                 </div>
-              </motion.div>
-            )}
-
-            {mode === 'phytos' && (
-              <motion.div
-                key="mode-phytos"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6 text-left animate-fade-in"
-              >
-                <PhytosManager
-                  isDarkMode={isDarkMode}
-                  exploitationData={exploitationData}
-                  onAddManualIft={handleAddManualIft}
-                  currentWindSpeed={weatherInput.wind}
-                />
               </motion.div>
             )}
 

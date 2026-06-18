@@ -52,22 +52,30 @@ export interface WeedPreset {
 
 export interface AgriInputs {
   surface: number;             // Hectares (ha)
-  doseProduct: number;         // L/ha
+  doseProduct: number;         // L/ha or kg/ha
   volumeWater: number;         // L/ha
   tankCapacity: number;        // Liters (L)
-  productConcentration: number;// g/L (e.g. 360, 450, 480)
+  productConcentration: number;// g/L or g/kg (e.g. 360, 450, 480)
+  ephyProductId?: string;      // Linked E-Phy product
+  isDry?: boolean;             // True if g/kg (solid) instead of g/L (liquid)
+  productName?: string;        // Product name
+  activeIngredient?: string;   // Active substance
+  ammNumber?: string;          // AMM identification number
+  unit?: 'g/L' | 'g/kg';      // Current concentration unit
+  reentryDelay?: string;       // DRE
+  harvestDelay?: string;       // DAR
 }
 
 export interface AgriOutputs {
-  totalProduct: number;        // L
+  totalProduct: number;        // L or kg
   totalWater: number;          // L
   totalBouillie: number;       // L
   numTanks: number;            // Full ratio
   fullTanksCount: number;      // Integer count
   hasPartialTank: boolean;
   partialTankWater: number;    // L
-  partialTankProduct: number;  // L
-  productPerFullTank: number;  // L
+  partialTankProduct: number;  // L or kg
+  productPerFullTank: number;  // L or kg
   waterPerFullTank: number;    // L
   autonomieCuve: number;       // ha covered by 1 full tank
 }
@@ -79,14 +87,22 @@ export interface JardinInputs {
   dilutionPercent: number;     // in % (e.g. 1.5% = 15ml/L)
   coverageRate: number;        // m² treated with 1L of spray mix (default 10 m²/L)
   productConcentration: number;// g/L (e.g. 360, 450, 480, 500)
+  ephyProductId?: string;      // Linked E-Phy product
+  isDry?: boolean;             // True if g/kg (solid) instead of g/L (liquid)
+  productName?: string;        // Product name
+  activeIngredient?: string;   // Active substance
+  ammNumber?: string;          // AMM identification number
+  unit?: 'g/L' | 'g/kg';      // Current concentration unit
+  reentryDelay?: string;       // DRE
+  harvestDelay?: string;       // DAR
 }
 
 export interface JardinOutputs {
   totalBouillie: number;       // L
-  totalProduct: number;        // ml
+  totalProduct: number;        // ml or g
   totalWater: number;          // L
   numTanks: number;            // Rounded up count (integer)
-  productPerFullTank: number;  // ml
+  productPerFullTank: number;  // ml or g
   waterPerFullTank: number;    // L
   maxAreaPerTank: number;      // m²
   actualMixRequired: boolean;  // whether total needed is less than full tank capacity

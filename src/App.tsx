@@ -62,6 +62,7 @@ import ZntCalculator from './components/ZntCalculator';
 import TreatmentCalendar from './components/TreatmentCalendar';
 import HveIftDashboard from './components/HveIftDashboard';
 import HelpTutorials from './components/HelpTutorials';
+import { EPhyAutocomplete } from './components/EPhyAutocomplete';
 import { AppMode, AgriInputs, JardinInputs, ExploitationData, Applicator, Parcelle, ParcelleGroup, HistoricalFiche, ManualIftTreatment } from './types';
 import { 
   calculateAgri, 
@@ -3020,12 +3021,20 @@ export default function App() {
                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paramètres personnalisés</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Nom du Produit</label>
-                            <input
-                              type="text"
+                            <label className="block text-[9px] text-slate-500 mb-0.5">Nom du Produit (Recherche Anses e-Phy)</label>
+                            <EPhyAutocomplete
                               value={agriInputs.productName}
-                              onChange={(e) => setAgriInputs(prev => ({ ...prev, productName: e.target.value }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none"
+                              onChange={(val) => setAgriInputs(prev => ({ ...prev, productName: val }))}
+                              onSelectProduct={(prod) => {
+                                setAgriInputs(prev => ({
+                                  ...prev,
+                                  productName: prod.name,
+                                  activeIngredient: prod.substanceName,
+                                  productConcentration: prod.concentration,
+                                  isDry: prod.isDry,
+                                  unit: prod.unit
+                                }));
+                              }}
                             />
                           </div>
                           <div>
@@ -3886,12 +3895,20 @@ export default function App() {
                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paramètres personnalisés</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Nom du Produit</label>
-                            <input
-                              type="text"
+                            <label className="block text-[9px] text-slate-500 mb-0.5">Nom du Produit (Recherche Anses e-Phy)</label>
+                            <EPhyAutocomplete
                               value={jardinInputs.productName}
-                              onChange={(e) => setJardinInputs(prev => ({ ...prev, productName: e.target.value }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none"
+                              onChange={(val) => setJardinInputs(prev => ({ ...prev, productName: val }))}
+                              onSelectProduct={(prod) => {
+                                setJardinInputs(prev => ({
+                                  ...prev,
+                                  productName: prod.name,
+                                  activeIngredient: prod.substanceName,
+                                  productConcentration: prod.concentration,
+                                  isDry: prod.isDry,
+                                  unit: prod.unit
+                                }));
+                              }}
                             />
                           </div>
                           <div>

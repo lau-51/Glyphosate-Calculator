@@ -1,4 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend
+} from 'recharts';
 import { getInputItem, saveInputItem } from './utils/indexedDB';
 import { 
   Leaf, 
@@ -502,6 +513,7 @@ export default function App() {
         const avgT = Math.round((minT + maxT) / 2);
         
         historyDaily.push({
+          timestamp: dateVal.getTime(),
           date: `${daysOfWeek[dateVal.getDay()]} ${dateVal.getDate()} ${months[dateVal.getMonth()]}`,
           tempMin: minT,
           tempMax: maxT,
@@ -1143,6 +1155,7 @@ export default function App() {
       const rainProb = Math.round(Math.max(0, 30 + Math.sin(i * 2.2) * 30));
       
       historyDaily.push({
+        timestamp: d.getTime(),
         date: dayLabel,
         tempMin,
         tempMax,
@@ -1220,6 +1233,16 @@ export default function App() {
 
     return { historyDaily, historyHourly, forecastDaily, forecastHourly };
   }, [fetchedWeather, weatherInput]);
+
+  const reversedHistoryData = useMemo(() => {
+    if (!weatherCollections?.historyDaily) return [];
+    return [...weatherCollections.historyDaily]
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+      .map(item => ({
+        ...item,
+        shortDate: item.date ? item.date.split(' ').slice(0, 2).join(' ') : '',
+      }));
+  }, [weatherCollections]);
 
   // Notification Permission State
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
@@ -4431,6 +4454,101 @@ export default function App() {
                           >
                             🕒 Heure par Heure (24h)
                           </button>
+                        </div>
+                      </div>
+
+                      {/* 7-Day Interactive Historical Evolution Chart */}
+                      <div className={`p-4 border rounded-2xl transition-all ${
+                        isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+                      }`}>
+                        <div className="mb-4">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-x-1.5">
+                            <Thermometer className="w-4 h-4 text-emerald-500 animate-pulse" />
+                            <span>Histogramme & Évolution (7 derniers jours)</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Suivi des amplitudes thermiques (Max/Min en °C) et des vitesses maximales du vent (km/h) requis pour la traçabilité.
+                          </p>
+                        </div>
+
+                        <div className="h-64 w-full text-xs font-mono">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart
+                              data={reversedHistoryData}
+                              margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                            >
+                              <defs>
+                                <linearGradient id="tempMinMaxGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? '#1e293b' : '#f1f5f9'} />
+                              <XAxis 
+                                dataKey="shortDate" 
+                                tickLine={false} 
+                                axisLine={false}
+                                tick={{ fill: isDarkMode ? '#94a3b8' : '#64748b', fontSize: 10 }}
+                              />
+                              <YAxis 
+                                yAxisId="left"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: isDarkMode ? '#10b981' : '#059669', fontSize: 10 }}
+                                unit="°C"
+                                domain={['auto', 'auto']}
+                              />
+                              <YAxis 
+                                yAxisId="right"
+                                orientation="right"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: isDarkMode ? '#f43f5e' : '#e11d48', fontSize: 10 }}
+                                unit=" km/h"
+                                domain={[0, 'auto']}
+                              />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', 
+                                  borderColor: isDarkMode ? '#334155' : '#e2e8f0',
+                                  borderRadius: '12px',
+                                  color: isDarkMode ? '#f8fafc' : '#0f172a',
+                                  fontSize: '11px',
+                                  fontFamily: 'monospace'
+                                }}
+                              />
+                              <Legend verticalAlign="top" height={36} iconType="circle" />
+                              <Area 
+                                yAxisId="left"
+                                type="monotone" 
+                                name="Temp Max (°C)"
+                                dataKey="tempMax" 
+                                stroke="#10b981" 
+                                fill="url(#tempMinMaxGrad)" 
+                                strokeWidth={2.5}
+                                activeDot={{ r: 6 }}
+                              />
+                              <Area 
+                                yAxisId="left"
+                                type="monotone" 
+                                name="Temp Min (°C)"
+                                dataKey="tempMin" 
+                                stroke="#3b82f6" 
+                                fill="none"
+                                strokeWidth={1.5}
+                                strokeDasharray="3 3"
+                              />
+                              <Line 
+                                yAxisId="right"
+                                type="monotone" 
+                                name="Vent Max (km/h)"
+                                dataKey="wind" 
+                                stroke="#f43f5e" 
+                                strokeWidth={2.5}
+                                dot={{ r: 3, fill: '#f43f5e', strokeWidth: 0 }}
+                              />
+                            </ComposedChart>
+                          </ResponsiveContainer>
                         </div>
                       </div>
 

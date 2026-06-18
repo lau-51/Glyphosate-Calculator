@@ -25,78 +25,6 @@ async function startServer() {
   });
 
   // API endpoints FIRST
-  app.get("/api/ephy/search", async (req, res) => {
-    try {
-      const q = req.query.q as string;
-      if (!q || q.trim().length < 2) {
-        return res.json([]);
-      }
-
-      if (!genaiApiKey) {
-        return res.status(403).json({
-          error: "Clé d'API manquante. Veuillez configurer GEMINI_API_KEY dans l'onglet Paramètres > Secrets.",
-        });
-      }
-
-      // We call Gemini with Google Search to look up commercial name details on ephy.anses.fr
-      const prompt = `Recherche sur le site officiel "ephy.anses.fr" les produits phytosanitaires ou herbicides dont le nom commercial ressemble ou commence par "${q}". Identifie jusqu'à 5 produits les plus pertinents. Pour chaque produit trouvé, fournis EXACTEMENT ces informations sous forme de tableau JSON d'objets :
-- "name": le nom commercial exact du produit sur e-Phy.
-- "ammNumber": le numéro d'AMM (Autorisation de Mise sur le Marché) à 7 chiffres du produit.
-- "substanceName": le nom de la matière active ou substance active principale du produit.
-- "concentration": la concentration numérique de cette matière active (ex: 360, 400).
-- "unit": l'unité de concentration: "g/L" si c'est un produit liquide, ou "g/kg" si c'est un produit solide/sec/poudre.
-- "isDry": true si le produit est sous forme solide (granulés WG/SG/poudre), false si c'est un liquide.
-
-Recherche bien "site:ephy.anses.fr ${q}" pour ramener des données réelles et valides de la base Anses. Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte en dehors.`;
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                ammNumber: { type: Type.STRING },
-                substanceName: { type: Type.STRING },
-                concentration: { type: Type.NUMBER },
-                unit: { type: Type.STRING },
-                isDry: { type: Type.BOOLEAN }
-              },
-              required: ["name", "substanceName", "concentration", "unit", "isDry"]
-            }
-          }
-        }
-      });
-
-      const responseText = response.text || "[]";
-      let results = [];
-      try {
-        results = JSON.parse(responseText.trim());
-      } catch (e) {
-        console.error("Failed to parse Gemini JSON:", responseText);
-        // Fallback robust json extraction
-        const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        if (jsonMatch) {
-          results = JSON.parse(jsonMatch[0]);
-        } else {
-          results = [];
-        }
-      }
-
-      res.json(results);
-    } catch (error: any) {
-      console.error("E-Phy ANSES dynamic search error:", error);
-      res.status(500).json({
-        error: error.message || "Erreur de recherche sur e-phy.",
-      });
-    }
-  });
-
   app.post("/api/ai/chat", async (req, res) => {
     try {
       if (!genaiApiKey) {
@@ -180,6 +108,158 @@ Recherche bien "site:ephy.anses.fr ${q}" pour ramener des données réelles et v
       console.error("Gemini API Error:", error);
       res.status(500).json({
         error: error.message || "Une erreur s'est produite lors de l'appel à l'API Gemini.",
+      });
+    }
+  });
+
+  // API endpoint for EPHY Anses phytosanitary product scraper / importer
+  app.post("/api/phytos/import", async (req, res) => {
+    try {
+      if (!genaiApiKey) {
+        return res.status(403).json({
+          error: "Clé d'API manquante. Veuillez configurer GEMINI_API_KEY dans l'onglet Paramètres > Secrets.",
+        });
+      }
+
+      const { url, rawText, name } = req.body;
+
+      if (!url && !rawText && !name) {
+        return res.status(400).json({ error: "S'il vous plaît, fournissez au moins une URL, du texte brute ou un nom de produit." });
+      }
+
+      let targetText = "";
+      let source = "Recherche intelligente par IA";
+
+      if (url) {
+        source = `Lien Ephy Anses (${url})`;
+        try {
+          // Validate hostname to ensure it's from ANSES domain
+          const parsedUrl = new URL(url);
+          if (!parsedUrl.hostname.endsWith("ephy.anses.fr") && !parsedUrl.hostname.endsWith("anses.fr")) {
+            return res.status(400).json({ error: "L'URL fournie doit provenir du site officiel ephy.anses.fr" });
+          }
+
+          console.log(`Scraping URL: ${url}`);
+          // Fetch the page using server-side fetch with headers
+          const fetchRes = await fetch(url, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+              "Accept-Language": "fr-FR,fr;q=0.8,en-US;q=0.5,en;q=0.3"
+            }
+          });
+
+          if (!fetchRes.ok) {
+            throw new Error(`Le site Ephy a retourné un statut HTTP ${fetchRes.status}`);
+          }
+
+          const html = await fetchRes.text();
+          // Clean HTML slightly so that we don't blow up token windows unnecessarily
+          targetText = html
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+            .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '')
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .substring(0, 35000); // Take the first 35k chars of readable content
+        } catch (fetchErr: any) {
+          console.error("Scraper fetch error:", fetchErr);
+          // Return a structured error indicating fetching failed, so the frontend can fallback gracefully
+          return res.status(502).json({
+            error: `La récupération en direct depuis ephy.anses.fr a échoué: ${fetchErr.message}. Veuillez copier-coller le texte directement ou utiliser la recherche intelligente par IA.`,
+            tryFallback: true
+          });
+        }
+      } else if (rawText) {
+        source = "Copie-coller du texte EPHY";
+        targetText = rawText.substring(0, 45000);
+      } else if (name) {
+        source = "Recherche encyclopédique IA";
+        targetText = `Rechercher et modéliser de façon réglementaire le produit phytosanitaire homologué en France sous le nom commercial: "${name}".`;
+      }
+
+      console.log(`Analyzing phyto content for: ${name || url || "rawText"}`);
+
+      // Call Gemini 3.5 Flash for structuring the text data
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: `
+          Tu es un ingénieur agronome expert en réglementation et traitements de protection des cultures (phytosanitaires).
+          Extrais ou restitue de façon scientifique et conforme aux homologations d'Ephy Anses les informations du produit suivant:
+
+          Texte source:
+          ${targetText}
+
+          Fais appel à tes connaissances très précises pour combler toute lacune ou manque dans les informations du texte d'Ephy (dosage par ha, AMM exact, substances actives, DAR en jours, etc.).
+          L'objectif est d'aider l'agriculteur à préparer son mélange de traitement en toute sécurité et conformément aux règlements HVE / IFT. 
+
+          Donne un résultat structuré répondant scrupuleusement au format de sortie JSON requis.
+        `,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING, description: "Nom commercial complet en MAJUSCULES (ex: CHAMP FLO)" },
+              amm: { type: Type.STRING, description: "Numéro de l'AMM de 7 chiffres (ex: 7000215, 2200115)" },
+              substances: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING }, 
+                description: "Substances de la composition avec leurs teneurs exactes (ex: [\"Cuivre 360 g/L\", \"Azoxystrobine 250 g/L\"])" 
+              },
+              holder: { type: Type.STRING, description: "Société titulaire ou distributrice du produit" },
+              type: { type: Type.STRING, description: "Catégorie de produit (ex: Herbicide, Fongicide, Insecticide, etc.)" },
+              formulation: { type: Type.STRING, description: "Type de formulation physique (ex: Suspension de contact, Dispersion huileuse (OD))" },
+              usages: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    culture: { type: Type.STRING, description: "Culture cible en français (ex: Vigne, Blé, Pommier, Betterave)" },
+                    target: { type: Type.STRING, description: "Maladie, ravageur ou adventice ciblé par ce traitement (ex: Mildiou, Oïdium, Adventices annuelles)" },
+                    maxDose: { type: Type.NUMBER, description: "Dose maximale homologué autorisée par hectare, valeur numérique en L/ha ou kg/ha. S'il n'y a pas d'unité, renvoie la dose commerciale standard par hectare (ex: 2.5)" },
+                    maxApplications: { type: Type.INTEGER, description: "Nombre maximum de traitements par an (par défaut 1 ou 2)" },
+                    dar: { type: Type.STRING, description: "Délai avant récolte : DAR en jours (ex: \"21 jours\", \"7 jours\", \"F (Sans objet)\")" },
+                    zntEau: { type: Type.STRING, description: "ZNT Aquatique réglementaire : Distance en mètres (ex: \"5 m\", \"20 m\", \"50 m\")" },
+                    zntSante: { type: Type.STRING, description: "ZNT Personnes présentes et riverains : Distance en mètres (ex: \"10 m\", \"5 m\", \"Non spécifié\")" },
+                    dre: { type: Type.STRING, description: "Délai de rentrée après application : DRE (ex: \"24 heures\", \"48 heures\", \"6 heures\")" },
+                  },
+                  required: ["culture", "target", "maxDose"]
+                },
+                description: "Les 2 ou 3 principaux usages les plus courants pour ce produit en agriculture/viticulture"
+              },
+              mentionDanger: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING }, 
+                description: "Phrases H et pictogrammes de danger associés (ex: [\"H410: Très toxique pour l'environnement\", \"H318: Lésions oculaires graves\"])" 
+              },
+              epiRequis: { 
+                type: Type.ARRAY, 
+                items: { type: Type.STRING }, 
+                description: "Équipements de protection obligatoire (ex: [\"Gants de nitrile\", \"Masque de type FFP3\", \"Tablier à manches longues catégorie III\", \"Lunettes de protection\"])" 
+              }
+            },
+            required: ["name", "amm", "substances", "type", "usages"]
+          },
+          temperature: 0.15
+        }
+      });
+
+      const parsedJson = JSON.parse(response.text.trim());
+      
+      const enrichedProduct = {
+        ...parsedJson,
+        id: parsedJson.amm || "amm-" + Date.now(),
+        dateImport: new Date().toLocaleDateString('fr-FR'),
+        source: source
+      };
+
+      res.json({ success: true, product: enrichedProduct });
+    } catch (apiErr: any) {
+      console.error("Phyto Import Gemini error:", apiErr);
+      res.status(500).json({
+        success: false,
+        error: `Une erreur s'est produite lors de l'extraction de l'homologation : ${apiErr.message}`
       });
     }
   });

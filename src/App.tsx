@@ -10,7 +10,6 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
-import { EPHY_PRODUCTS, EPhyProduct } from './data/ephyProducts';
 import { getInputItem, saveInputItem } from './utils/indexedDB';
 import { 
   Leaf, 
@@ -38,6 +37,7 @@ import {
   Printer,
   FileText,
   Bot,
+  Globe,
   Upload,
   Trash2,
   Loader2,
@@ -53,8 +53,7 @@ import {
   X,
   Eye,
   EyeOff,
-  Filter,
-  ExternalLink
+  Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { shareFichePDF } from './utils/pdfGenerator';
@@ -62,7 +61,7 @@ import ZntCalculator from './components/ZntCalculator';
 import TreatmentCalendar from './components/TreatmentCalendar';
 import HveIftDashboard from './components/HveIftDashboard';
 import HelpTutorials from './components/HelpTutorials';
-import { EPhyAutocomplete } from './components/EPhyAutocomplete';
+import PhytosManager from './components/PhytosManager';
 import { AppMode, AgriInputs, JardinInputs, ExploitationData, Applicator, Parcelle, ParcelleGroup, HistoricalFiche, ManualIftTreatment } from './types';
 import { 
   calculateAgri, 
@@ -301,15 +300,7 @@ export default function App() {
     doseProduct: 3,           // L/ha
     volumeWater: 120,         // L/ha
     tankCapacity: 800,        // Liters
-    productConcentration: 360, // g/L
-    ephyProductId: 'roundup-360',
-    isDry: false,
-    productName: 'Roundup Power 360',
-    activeIngredient: 'Glyphosate',
-    ammNumber: '2170327',
-    unit: 'g/L',
-    reentryDelay: '6 heures',
-    harvestDelay: 'Exempt'
+    productConcentration: 360 // g/L
   });
 
   const [agriCropType, setAgriCropType] = useState<'grandes_cultures' | 'viticulture' | 'arboriculture'>('grandes_cultures');
@@ -321,15 +312,7 @@ export default function App() {
     weedType: 'annual',       // preset id
     dilutionPercent: 1.5,     // default for annual weeding
     coverageRate: 10,         // 10 m² treated per 1L mix
-    productConcentration: 360, // g/L
-    ephyProductId: 'roundup-360',
-    isDry: false,
-    productName: 'Roundup Power 360',
-    activeIngredient: 'Glyphosate',
-    ammNumber: '2170327',
-    unit: 'g/L',
-    reentryDelay: '6 heures',
-    harvestDelay: 'Exempt'
+    productConcentration: 360 // g/L
   });
 
   // Weather station simulation state and presets
@@ -1505,45 +1488,6 @@ export default function App() {
     }));
   };
 
-  const handleAgriProductChange = (productId: string) => {
-    if (productId === 'custom') {
-      setAgriInputs(prev => ({
-        ...prev,
-        ephyProductId: 'custom',
-        productName: prev.productName === 'Roundup Power 360' ? 'Produit Personnalisé' : prev.productName,
-        activeIngredient: prev.activeIngredient === 'Glyphosate' ? 'Substance Active' : prev.activeIngredient,
-        ammNumber: prev.ammNumber === '2170327' ? '0000000' : prev.ammNumber,
-        isDry: prev.isDry ?? false,
-        unit: prev.unit || 'g/L',
-        reentryDelay: prev.reentryDelay || '6 heures',
-        harvestDelay: prev.harvestDelay || '3 jours',
-      }));
-      return;
-    }
-
-    const product = EPHY_PRODUCTS.find(p => p.id === productId);
-    if (product) {
-      setAgriInputs(prev => ({
-        ...prev,
-        ephyProductId: product.id,
-        productName: product.name,
-        activeIngredient: product.substanceName,
-        ammNumber: product.ammNumber,
-        isDry: product.isDry,
-        productConcentration: product.concentration,
-        unit: product.unit,
-        reentryDelay: product.reentryDelay,
-        harvestDelay: product.harvestDelay,
-        doseProduct: product.defaultDose,
-        volumeWater: product.defaultWaterVolume
-      }));
-      setFicheInputs(prev => ({
-        ...prev,
-        produitNom: product.name
-      }));
-    }
-  };
-
   // Handlers for Jardin
   const handleJardinChange = (field: keyof JardinInputs, value: any) => {
     setJardinInputs(prev => {
@@ -1559,65 +1503,16 @@ export default function App() {
     });
   };
 
-  const handleJardinProductChange = (productId: string) => {
-    if (productId === 'custom') {
-      setJardinInputs(prev => ({
-        ...prev,
-        ephyProductId: 'custom',
-        productName: prev.productName === 'Roundup Power 360' ? 'Produit Personnalisé' : prev.productName,
-        activeIngredient: prev.activeIngredient === 'Glyphosate' ? 'Substance Active' : prev.activeIngredient,
-        ammNumber: prev.ammNumber === '2170327' ? '0000000' : prev.ammNumber,
-        isDry: prev.isDry ?? false,
-        unit: prev.unit || 'g/L',
-        reentryDelay: prev.reentryDelay || '6 heures',
-        harvestDelay: prev.harvestDelay || '3 jours',
-      }));
-      return;
-    }
-
-    const product = EPHY_PRODUCTS.find(p => p.id === productId);
-    if (product) {
-      setJardinInputs(prev => ({
-        ...prev,
-        ephyProductId: product.id,
-        productName: product.name,
-        activeIngredient: product.substanceName,
-        ammNumber: product.ammNumber,
-        isDry: product.isDry,
-        productConcentration: product.concentration,
-        unit: product.unit,
-        reentryDelay: product.reentryDelay,
-        harvestDelay: product.harvestDelay
-      }));
-      setFicheInputs(prev => ({
-        ...prev,
-        produitNom: product.name
-      }));
-    }
-  };
-
   const resetAgri = () => {
     setAgriInputs({
       surface: 5,
       doseProduct: 3,
       volumeWater: 120,
       tankCapacity: 800,
-      productConcentration: 360,
-      ephyProductId: 'roundup-360',
-      isDry: false,
-      productName: 'Roundup Power 360',
-      activeIngredient: 'Glyphosate',
-      ammNumber: '2170327',
-      unit: 'g/L',
-      reentryDelay: '6 heures',
-      harvestDelay: 'Exempt'
+      productConcentration: 360
     });
     setIsAgriTankCustom(false);
     setIsAgriConcCustom(false);
-    setFicheInputs(prev => ({
-      ...prev,
-      produitNom: 'Roundup Power 360'
-    }));
   };
 
   const resetJardin = () => {
@@ -1627,23 +1522,11 @@ export default function App() {
       weedType: 'annual',
       dilutionPercent: 1.5,
       coverageRate: 10,
-      productConcentration: 360,
-      ephyProductId: 'roundup-360',
-      isDry: false,
-      productName: 'Roundup Power 360',
-      activeIngredient: 'Glyphosate',
-      ammNumber: '2170327',
-      unit: 'g/L',
-      reentryDelay: '6 heures',
-      harvestDelay: 'Exempt'
+      productConcentration: 360
     });
     setIsJardinTankCustom(false);
     setIsJardinBuseCustom(false);
     setIsJardinConcCustom(false);
-    setFicheInputs(prev => ({
-      ...prev,
-      produitNom: 'Roundup Power 360'
-    }));
   };
 
   return (
@@ -1866,7 +1749,7 @@ export default function App() {
           )}
 
           {/* Primary Screen Tabs */}
-          <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-10 gap-2 mb-6">
+          <nav className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-11 gap-2 mb-6">
             <button
               id="tab-exploitation"
               onClick={() => setMode('exploitation')}
@@ -1985,6 +1868,21 @@ export default function App() {
             >
               <Wind className="w-4 h-4" />
               <span>Calculateur de Dérive & ZNT</span>
+            </button>
+
+            <button
+              id="tab-phytos"
+              onClick={() => setMode('phytos')}
+              className={`flex items-center justify-center gap-x-2 py-3.5 px-3 rounded-2xl font-medium text-sm transition-all duration-200 border cursor-pointer ${
+                mode === 'phytos'
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm font-semibold'
+                  : (isDarkMode 
+                      ? 'bg-slate-900 border-slate-800 hover:bg-slate-850 text-slate-400 hover:text-white' 
+                      : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900')
+              }`}
+            >
+              <Globe className="w-4 h-4 text-emerald-500" />
+              <span>Traitements Phytos</span>
             </button>
 
             <button
@@ -2983,116 +2881,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* Step 0: Product Selection connected to e-Phy ANSES */}
-                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-x-1.5">
-                        <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Étape 0 : Produit de Protection (Base e-Phy ANSES)</span>
-                      </label>
-                      <a 
-                        href="https://ephy.anses.fr/" 
-                        target="_blank" 
-                        rel="referrer"
-                        className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold underline flex items-center gap-x-0.5"
-                      >
-                        ephy.anses.fr
-                      </a>
-                    </div>
-
-                    <select
-                      value={agriInputs.ephyProductId}
-                      onChange={(e) => handleAgriProductChange(e.target.value)}
-                      className={`w-full p-2.5 rounded-xl text-xs border font-medium cursor-pointer ${
-                        isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-850 shadow-xs'
-                      }`}
-                    >
-                      {EPHY_PRODUCTS.map(prod => (
-                        <option key={prod.id} value={prod.id}>
-                          {prod.name} (AMM N°{prod.ammNumber}) — {prod.substanceName}
-                        </option>
-                      ))}
-                      <option value="custom">🧪 Autre / Produit Personnalisé...</option>
-                    </select>
-
-                    {/* Custom Product Inputs when chosen */}
-                    {agriInputs.ephyProductId === 'custom' && (
-                      <div className="mt-3.5 p-3 bg-slate-100/40 dark:bg-slate-900/40 rounded-xl border border-slate-200/50 dark:border-slate-800 space-y-2.5">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paramètres personnalisés</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Nom du Produit (Recherche Anses e-Phy)</label>
-                            <EPhyAutocomplete
-                              value={agriInputs.productName}
-                              onChange={(val) => setAgriInputs(prev => ({ ...prev, productName: val }))}
-                              onSelectProduct={(prod) => {
-                                setAgriInputs(prev => ({
-                                  ...prev,
-                                  productName: prod.name,
-                                  activeIngredient: prod.substanceName,
-                                  productConcentration: prod.concentration,
-                                  isDry: prod.isDry,
-                                  unit: prod.unit
-                                }));
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5 font-medium">Substance active</label>
-                            <input
-                              type="text"
-                              value={agriInputs.activeIngredient}
-                              onChange={(e) => setAgriInputs(prev => ({ ...prev, activeIngredient: e.target.value }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Concentration (g/L ou g/kg)</label>
-                            <input
-                              type="number"
-                              value={agriInputs.productConcentration}
-                              onChange={(e) => setAgriInputs(prev => ({ ...prev, productConcentration: parseFloat(e.target.value) || 0 }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs font-mono focus:outline-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Formulation physique</label>
-                            <select
-                              value={agriInputs.isDry ? 'dry' : 'liquid'}
-                              onChange={(e) => setAgriInputs(prev => ({ ...prev, isDry: e.target.value === 'dry', unit: e.target.value === 'dry' ? 'g/kg' : 'g/L' }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none"
-                            >
-                              <option value="liquid">Formule Liquide (g/L)</option>
-                              <option value="dry">Poudre Sèche (g/kg)</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Compact Product Delays overview */}
-                    <div className="mt-2.5 p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/50 dark:border-slate-800/80 text-[11px] space-y-1 text-slate-500 dark:text-slate-400">
-                      <div className="flex justify-between">
-                        <span>Matière Active :</span>
-                        <strong className="text-slate-700 dark:text-slate-300 font-semibold">{agriInputs.activeIngredient}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Concentration :</span>
-                        <strong className="text-slate-700 dark:text-slate-300 font-mono font-medium">{agriInputs.productConcentration} {agriInputs.unit}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Délai de rentrée (DRE) :</span>
-                        <strong className="text-amber-600 font-semibold font-mono">{agriInputs.reentryDelay}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Délai récolte (DAR) :</span>
-                        <strong className="text-blue-600 font-semibold font-mono">{agriInputs.harvestDelay}</strong>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Input 1: Surface area (ha) */}
                   <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
                     <div className="flex justify-between items-center mb-2">
@@ -3402,7 +3190,7 @@ export default function App() {
 
                     <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl">
                       <label className="block text-xs font-semibold text-slate-600 mb-1">
-                        Concentration Produit
+                        Concentration Roundup
                       </label>
                       <select
                         value={isAgriConcCustom ? 'custom' : agriInputs.productConcentration}
@@ -3462,13 +3250,13 @@ export default function App() {
                     <div className="text-xs uppercase font-bold tracking-widest text-emerald-700 mb-3 flex items-center justify-between">
                       <span>Bilan global de la préparation</span>
                       <span className="text-slate-500 font-mono text-[10px]">
-                        {agriInputs.activeIngredient} {agriInputs.productConcentration} {agriInputs.unit}
+                        Glyphosate {agriInputs.productConcentration} g/L
                       </span>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                       <div className="relative">
-                        <div className="text-[10px] text-slate-500 font-medium truncate">Total Produit à doser</div>
+                        <div className="text-[10px] text-slate-500 font-medium truncate">Total Roundup à doser</div>
                         <div className="text-2xl font-black text-rose-600 font-display mt-1">
                           {agriOutputs.totalProduct} <span className="text-sm font-medium text-black dark:text-neutral-300">L</span>
                         </div>
@@ -3489,7 +3277,7 @@ export default function App() {
 
                       <div className="relative border-l border-slate-150 pl-4">
                         <div className="text-[10px] text-slate-500 font-medium truncate">Bouillie totale</div>
-                        <div className="text-2xl font-black text-slate-800 font-display mt-1 font-sans">
+                        <div className="text-2xl font-black text-slate-800 font-display mt-1">
                           {agriOutputs.totalBouillie} <span className="text-sm font-medium">L</span>
                         </div>
                         <div className="text-[9px] text-slate-400 font-mono mt-0.5">
@@ -3505,175 +3293,147 @@ export default function App() {
                       ? 'bg-slate-900 border-slate-800 text-slate-100' 
                       : 'bg-white border-slate-200 text-slate-800'
                   }`}>
+                    <div className="flex items-center justify-between mb-3 border-b pb-2.5 border-dashed border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center gap-x-2">
+                        <Scale className={`w-5 h-5 ${
+                          (agriInputs.doseProduct * agriInputs.productConcentration) > (agriCropType === 'grandes_cultures' ? 1080 : agriCropType === 'viticulture' ? 450 : 900)
+                            ? 'text-rose-500 animate-pulse'
+                            : 'text-emerald-500'
+                        }`} />
+                        <h4 className="text-xs font-bold uppercase tracking-wider">
+                          Vérificateur de Dose (Normes Européenne & ANSES)
+                        </h4>
+                      </div>
+                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                        (agriInputs.doseProduct * agriInputs.productConcentration) > (agriCropType === 'grandes_cultures' ? 1080 : agriCropType === 'viticulture' ? 450 : 900)
+                          ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                          : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                      }`}>
+                        {(agriInputs.doseProduct * agriInputs.productConcentration) > (agriCropType === 'grandes_cultures' ? 1080 : agriCropType === 'viticulture' ? 450 : 900)
+                          ? 'Non conforme'
+                          : 'Dose Conforme'
+                      }
+                      </span>
+                    </div>
+
+                    <p className={`text-xs mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Le glyphosate est soumis à des limites réglementaires de dose maximale de matière active par hectare et par an en Europe et validées par l'ANSES. Sélectionnez votre culture :
+                    </p>
+
+                    {/* Culture selector tabs */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {[
+                        { id: 'grandes_cultures', label: 'Grandes Cultures', limit: 1080, desc: 'Céréales, Colza, Betteraves...' },
+                        { id: 'viticulture', label: 'Viticulture', limit: 450, desc: 'Vignes (inter-rang de vigne)' },
+                        { id: 'arboriculture', label: 'Arboriculture', limit: 900, desc: 'Vergers et arbres fruitiers' }
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setAgriCropType(item.id as any)}
+                          className={`p-2 rounded-xl text-center border transition-all text-[11px] font-medium flex flex-col justify-center items-center shadow-xs cursor-pointer ${
+                            agriCropType === item.id
+                              ? 'bg-emerald-500 text-white border-emerald-500 ring-2 ring-emerald-500/15'
+                              : isDarkMode
+                                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-755'
+                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="font-bold text-[11px]">{item.label}</span>
+                          <span className={`text-[9px] font-mono mt-0.5 ${agriCropType === item.id ? 'text-emerald-100' : 'text-slate-400 dark:text-slate-500'}`}>
+                            {item.limit} g s.a./ha
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Calculation Metrics */}
                     {(() => {
                       const doseMatiereActive = Math.round(agriInputs.doseProduct * agriInputs.productConcentration);
-                      
-                      // Find matching regulatory limits for the current product
-                      const productInfo = EPHY_PRODUCTS.find(p => p.id === agriInputs.ephyProductId);
-                      const productLimits = agriInputs.ephyProductId === 'custom'
-                        ? { grandes_cultures: 1080, viticulture: 450, arboriculture: 900 } // Default fallback limits
-                        : productInfo?.limitsByCrop || {};
-
-                      const currentLimit = productLimits[agriCropType];
-                      const isExceeded = currentLimit !== undefined && doseMatiereActive > currentLimit;
-                      const percentOfLimit = currentLimit !== undefined ? Math.round((doseMatiereActive / currentLimit) * 100) : 0;
+                      const currentLimit = 
+                        agriCropType === 'grandes_cultures' ? 1080 :
+                        agriCropType === 'viticulture' ? 450 : 900;
+                      const percentOfLimit = Math.round((doseMatiereActive / currentLimit) * 100);
+                      const isExceeded = doseMatiereActive > currentLimit;
 
                       return (
-                        <>
-                          <div className="flex items-center justify-between mb-3 border-b pb-2.5 border-dashed border-slate-200 dark:border-slate-850">
-                            <div className="flex items-center gap-x-2">
-                              <Scale className={`w-5 h-5 ${
-                                isExceeded ? 'text-rose-500 animate-pulse' : 'text-emerald-500'
-                              }`} />
-                              <h4 className="text-xs font-bold uppercase tracking-wider">
-                                Vérificateur de Dose (Normes Européenne & ANSES)
-                              </h4>
+                        <div className="space-y-3.5">
+                          {/* Progress/gauge bar */}
+                          <div>
+                            <div className="flex justify-between text-[11px] mb-1 font-mono">
+                              <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                                Dose appliquée : <strong className={isExceeded ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>{doseMatiereActive} g/ha</strong>
+                              </span>
+                              <span className="text-slate-400">
+                                Seuil : <strong>{currentLimit} g/ha</strong>
+                              </span>
                             </div>
-                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                              currentLimit === undefined
-                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                                : isExceeded
-                                  ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
-                                  : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                            }`}>
-                              {currentLimit === undefined
-                                ? 'Sans limite spécifique'
-                                : isExceeded
-                                  ? 'Non conforme'
-                                  : 'Dose Conforme'
-                              }
-                            </span>
-                          </div>
-
-                          <p className={`text-xs mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-550'}`}>
-                            La dose de matière active de <strong>{agriInputs.activeIngredient || 'la substance active'}</strong> est soumise à des doses limites homologuées selon la culture cible. Sélectionnez votre culture :
-                          </p>
-
-                          {/* Culture selector tabs */}
-                          <div className="grid grid-cols-3 gap-2 mb-4">
-                            {[
-                              { id: 'grandes_cultures', label: 'Grandes Cultures', limit: productLimits?.grandes_cultures, desc: 'Céréales, Colza, Betteraves...' },
-                              { id: 'viticulture', label: 'Viticulture', limit: productLimits?.viticulture, desc: 'Vignes (inter-rang de vigne)' },
-                              { id: 'arboriculture', label: 'Arboriculture', limit: productLimits?.arboriculture, desc: 'Vergers et arbres fruitiers' }
-                            ].map((item) => {
-                              const isSupported = item.limit !== undefined;
-                              return (
-                                <button
-                                  key={item.id}
-                                  type="button"
-                                  disabled={!isSupported}
-                                  onClick={() => setAgriCropType(item.id as any)}
-                                  className={`p-2 rounded-xl text-center border transition-all text-[11px] font-medium flex flex-col justify-center items-center shadow-xs cursor-pointer ${
-                                    !isSupported ? 'opacity-30 cursor-not-allowed' : ''
-                                  } ${
-                                    agriCropType === item.id && isSupported
-                                      ? 'bg-emerald-500 text-white border-emerald-500 ring-2 ring-emerald-500/15'
-                                      : isDarkMode
-                                        ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-755'
-                                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                                  }`}
-                                >
-                                  <span className="font-bold text-[11px]">{item.label}</span>
-                                  <span className={`text-[9px] font-mono mt-0.5 ${agriCropType === item.id && isSupported ? 'text-emerald-100' : 'text-slate-405'}`}>
-                                    {isSupported ? `${item.limit} g s.a./ha` : 'S/O'}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          <div className="space-y-3.5 pt-2">
-                            {/* Progress/gauge bar */}
-                            {currentLimit !== undefined ? (
-                              <div>
-                                <div className="flex justify-between text-[11px] mb-1 font-mono">
-                                  <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
-                                    Dose appliquée : <strong className={isExceeded ? 'text-rose-600 dark:text-rose-455 font-bold' : 'text-emerald-600 dark:text-emerald-405 font-bold'}>{doseMatiereActive} g s.a./ha</strong>
-                                  </span>
-                                  <span className="text-slate-450">
-                                    Seuil légal : <strong>{currentLimit} g s.a./ha</strong>
-                                  </span>
-                                </div>
-                                <div className={`w-full h-3 rounded-full overflow-hidden flex ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                                  <motion.div
-                                    className={`h-full rounded-full ${isExceeded ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(percentOfLimit, 100)}%` }}
-                                    transition={{ duration: 0.5 }}
-                                  />
-                                </div>
-                                <div className="flex justify-between text-[9px] mt-1 text-slate-400 font-mono">
-                                  <span>0 g s.a. ({agriInputs.activeIngredient || 'matière active'})</span>
-                                  <span className={isExceeded ? 'text-rose-500 font-bold animate-pulse' : 'text-emerald-500 font-bold'}>
-                                    {percentOfLimit}% du seuil maximal
-                                  </span>
-                                  <span>{currentLimit} g s.a./ha (Max)</span>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-xs p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-855 font-medium text-slate-600 dark:text-slate-400">
-                                ✅ Aucun seuil restrictif de dose annuelle de matière active n'est listé sous e-Phy pour <strong>"{agriInputs.activeIngredient || 'cette matière active'}"</strong> sur la culture sélectionnée. Veillez néanmoins à appliquer la dose AMM conseillée par le fabricant.
-                              </div>
-                            )}
-
-                            {/* Dynamic Feedback Box */}
-                            <AnimatePresence mode="wait">
+                            <div className={`w-full h-3 rounded-full overflow-hidden flex ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'}`}>
                               <motion.div
-                                key={`${agriCropType}-${doseMatiereActive}-${agriInputs.ephyProductId}`}
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -5 }}
-                                className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
-                                  isExceeded
-                                    ? isDarkMode
-                                      ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
-                                      : 'bg-rose-50 border-rose-200 text-rose-800'
-                                    : currentLimit === undefined
-                                      ? isDarkMode
-                                        ? 'bg-slate-850/50 border-slate-805 text-slate-300'
-                                        : 'bg-slate-50 border-slate-150 text-slate-700'
-                                      : isDarkMode
-                                        ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-200'
-                                        : 'bg-emerald-55/70 border-emerald-202 text-emerald-800'
-                                }`}
-                              >
-                                <div className="flex items-start gap-x-2.5">
-                                  <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${isExceeded ? 'text-rose-500 animate-bounce' : 'text-emerald-500'}`} />
-                                  <div className="space-y-1">
-                                    <p className="font-bold text-[12px]">
-                                      {currentLimit === undefined
-                                        ? 'Usage réglementé par l\'étiquette AMM'
-                                        : isExceeded 
-                                          ? `Attention : Dépassement légal de ${doseMatiereActive - currentLimit} g s.a./ha !`
-                                          : 'Dose conforme aux réglementations'
-                                      }
-                                    </p>
-                                    <p className="text-[11px] opacity-90 leading-relaxed">
-                                      {currentLimit === undefined
-                                        ? `Le produit "${agriInputs.productName}" ne présente pas de limitation d'épandage spécifique de matière active annuelle sous e-Phy pour la culture sélectionnée.`
-                                        : isExceeded
-                                          ? `Votre traitement projette d'appliquer ${doseMatiereActive} g de substance active (${agriInputs.activeIngredient || 'substance active'}) par hectare. Cela dépasse la limite maximale réglementée par l'ANSES de ${currentLimit} g/ha (soit un taux de ${percentOfLimit}% de la dose réglementaire autorisée).`
-                                          : `Votre traitement appliquera ${doseMatiereActive} g de substance active (${agriInputs.activeIngredient || 'substance active'}) par hectare, soit ${percentOfLimit}% de la limite réglementaire maximale d'usage de ${currentLimit} g/ha.`
-                                      }
-                                    </p>
-                                    {isExceeded && currentLimit !== undefined && (
-                                      <div className={`mt-2 p-2.5 rounded-lg border text-[10.5px] ${
-                                        isDarkMode ? 'bg-rose-950/40 border-rose-800/20 text-rose-300' : 'bg-white border-rose-100 text-rose-900 shadow-xs'
-                                      }`}>
-                                        <span className="font-bold">💡 Solutions de conformité :</span>
-                                        <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-90 font-medium">
-                                          <li>Diminuez la dose de produit par hectare à maximum <strong className="font-bold font-mono text-rose-500">{(currentLimit / (agriInputs.productConcentration || 1)).toFixed(2)} {agriInputs.isDry ? 'kg/ha' : 'L/ha'}</strong> pour rester conforme.</li>
-                                          <li>Envisagez d'utiliser une formulation plus concentrée ou d'ajuster l'espacement d'intervention.</li>
-                                          <li>Associez un désherbage mécanique complémentaire (travail du sol localisé) pour limiter les intrants chimiques.</li>
-                                        </ul>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </motion.div>
-                            </AnimatePresence>
+                                className={`h-full rounded-full ${isExceeded ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(percentOfLimit, 100)}%` }}
+                                transition={{ duration: 0.5 }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[9px] mt-1 text-slate-400 font-mono">
+                              <span>0 g s.a. (substance active)</span>
+                              <span className={isExceeded ? 'text-rose-500 font-bold' : 'text-emerald-500 font-bold'}>
+                                {percentOfLimit}% de la limite
+                              </span>
+                              <span>{currentLimit} g/ha (Max)</span>
+                            </div>
                           </div>
-                        </>
+
+                          {/* Dynamic Feedback Box */}
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${agriCropType}-${doseMatiereActive}`}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
+                                isExceeded
+                                  ? isDarkMode
+                                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                                  : isDarkMode
+                                    ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-200'
+                                    : 'bg-emerald-50/70 border-emerald-200/60 text-emerald-800'
+                              }`}
+                            >
+                              <div className="flex items-start gap-x-2.5">
+                                <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${isExceeded ? 'text-rose-500 animate-bounce' : 'text-emerald-500'}`} />
+                                <div className="space-y-1">
+                                  <p className="font-bold text-[12px]">
+                                    {isExceeded 
+                                      ? `Attention : Dépassement légal de ${doseMatiereActive - currentLimit} g/ha !`
+                                      : 'Dose conforme aux réglementations'
+                                    }
+                                  </p>
+                                  <p className="text-[11px] opacity-90">
+                                    {isExceeded
+                                      ? `Votre traitement projette d'appliquer ${doseMatiereActive} g de substance active (Glyphosate) par hectare. Cela dépasse la limite maximale réglementée par l'ANSES de ${currentLimit} g/ha (soit un taux de ${percentOfLimit}% de la dose réglementaire autorisée).`
+                                      : `Votre traitement appliquera ${doseMatiereActive} g de substance active (Glyphosate) par hectare, soit ${percentOfLimit}% de la limite réglementaire maximale d'usage annuel de ${currentLimit} g/ha.`
+                                    }
+                                  </p>
+                                  {isExceeded && (
+                                    <div className={`mt-2 p-2 rounded-lg border text-[10px] ${
+                                      isDarkMode ? 'bg-rose-950/40 border-rose-800/20' : 'bg-white border-rose-100'
+                                    }`}>
+                                      <span className="font-bold">💡 Solutions de conformité :</span>
+                                      <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-90">
+                                        <li>Diminuez la dose produit par hectare à maximum <strong className="font-bold font-mono">{(currentLimit / agriInputs.productConcentration).toFixed(2)} L/ha</strong> pour cette concentration.</li>
+                                        <li>Envisagez d'utiliser une formulation plus concentrée ou d'ajuster les buses d'injection.</li>
+                                        <li>Associez un désherbage mécanique complémentaire (travail du sol) pour combler le besoin.</li>
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </motion.div>
+                          </AnimatePresence>
+                        </div>
                       );
                     })()}
                   </div>
@@ -3702,8 +3462,8 @@ export default function App() {
                           <div className="w-full bg-blue-500/10 flex flex-col" style={{ height: '70%' }}>
                             <div className="w-full bg-emerald-500/10 py-2 flex-grow transition-all">
                               {/* Glowing chemical content representation */}
-                              <div className="text-[10px] text-center font-bold text-emerald-700 tracking-wider font-sans truncate px-1">
-                                {agriInputs.productName} + Eau
+                              <div className="text-[10px] text-center font-bold text-emerald-700 tracking-wider">
+                                Roundup + Eau
                               </div>
                             </div>
                           </div>
@@ -3741,7 +3501,7 @@ export default function App() {
                                 <span className="font-bold text-blue-600">{agriOutputs.waterPerFullTank} L</span>
                               </div>
                               <div className="flex justify-between border-t border-slate-100 pt-1">
-                                <span>Dose de Produit (Pur) :</span>
+                                <span>Pure Roundup :</span>
                                 <span className="font-bold text-rose-600">+{agriOutputs.productPerFullTank} L</span>
                               </div>
                             </div>
@@ -3764,7 +3524,7 @@ export default function App() {
                                 <span className="font-bold text-blue-600">{agriOutputs.partialTankWater} L</span>
                               </div>
                               <div className="flex justify-between border-t border-amber-100/50 pt-1">
-                                <span>Dose de Produit (Pur) :</span>
+                                <span>Pure Roundup :</span>
                                 <span className="font-bold text-rose-600">+{agriOutputs.partialTankProduct} L</span>
                               </div>
                             </div>
@@ -3789,7 +3549,7 @@ export default function App() {
                     <div className="text-xs text-slate-600">
                       <div className="font-bold text-blue-900">Ordre d'introduction en cuve (C.E.P.A):</div>
                       <p className="mt-0.5 leading-relaxed text-slate-500">
-                        1. Remplir la cuve à 50% d'eau. 2. Lancer l'agitation mécanique. 3. Verser la dose de {agriInputs.productName} ({agriOutputs.productPerFullTank} L par cuve pleine). 4. Remplir les 50% d'eau restants tout en conservant l'agitation.
+                        1. Remplir la cuve à 50% d'eau. 2. Lancer l'agitation mécanique. 3. Verser la dose de Roundup ({agriOutputs.productPerFullTank} L par cuve pleine). 4. Remplir les 50% d'eau restants tout en conservant l'agitation.
                       </p>
                     </div>
                   </div>
@@ -3856,116 +3616,6 @@ export default function App() {
                       </div>
                     </div>
                   )}
-
-                  {/* Step 0: Product Selection connected to e-Phy ANSES for Gardening */}
-                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-x-1.5">
-                        <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>Étape 0 : Choisir le produit (Base e-Phy ANSES)</span>
-                      </label>
-                      <a 
-                        href="https://ephy.anses.fr/" 
-                        target="_blank" 
-                        rel="referrer"
-                        className="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold underline flex items-center gap-x-0.5"
-                      >
-                        ephy.anses.fr
-                      </a>
-                    </div>
-
-                    <select
-                      value={jardinInputs.ephyProductId}
-                      onChange={(e) => handleJardinProductChange(e.target.value)}
-                      className={`w-full p-2.5 rounded-xl text-xs border font-medium cursor-pointer ${
-                        isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-850 shadow-xs'
-                      }`}
-                    >
-                      {EPHY_PRODUCTS.map(prod => (
-                        <option key={prod.id} value={prod.id}>
-                          {prod.name} (AMM N°{prod.ammNumber}) — {prod.substanceName}
-                        </option>
-                      ))}
-                      <option value="custom">🧪 Autre / Produit Personnalisé...</option>
-                    </select>
-
-                    {/* Custom Product Inputs when chosen */}
-                    {jardinInputs.ephyProductId === 'custom' && (
-                      <div className="mt-3.5 p-3 bg-slate-100/40 dark:bg-slate-900/40 rounded-xl border border-slate-200/50 dark:border-slate-800 space-y-2.5">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paramètres personnalisés</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Nom du Produit (Recherche Anses e-Phy)</label>
-                            <EPhyAutocomplete
-                              value={jardinInputs.productName}
-                              onChange={(val) => setJardinInputs(prev => ({ ...prev, productName: val }))}
-                              onSelectProduct={(prod) => {
-                                setJardinInputs(prev => ({
-                                  ...prev,
-                                  productName: prod.name,
-                                  activeIngredient: prod.substanceName,
-                                  productConcentration: prod.concentration,
-                                  isDry: prod.isDry,
-                                  unit: prod.unit
-                                }));
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5 font-medium">Substance active</label>
-                            <input
-                              type="text"
-                              value={jardinInputs.activeIngredient}
-                              onChange={(e) => setJardinInputs(prev => ({ ...prev, activeIngredient: e.target.value }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Concentration (g/L ou g/kg)</label>
-                            <input
-                              type="number"
-                              value={jardinInputs.productConcentration}
-                              onChange={(e) => setJardinInputs(prev => ({ ...prev, productConcentration: parseFloat(e.target.value) || 0 }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs font-mono focus:outline-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-500 mb-0.5">Formulation physique</label>
-                            <select
-                              value={jardinInputs.isDry ? 'dry' : 'liquid'}
-                              onChange={(e) => setJardinInputs(prev => ({ ...prev, isDry: e.target.value === 'dry', unit: e.target.value === 'dry' ? 'g/kg' : 'g/L' }))}
-                              className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none"
-                            >
-                              <option value="liquid">Formule Liquide (g/L)</option>
-                              <option value="dry">Poudre Sèche (g/kg)</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Compact Product Delays overview */}
-                    <div className="mt-2.5 p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/50 dark:border-slate-800/80 text-[11px] space-y-1 text-slate-500 dark:text-slate-400">
-                      <div className="flex justify-between">
-                        <span>Matière Active :</span>
-                        <strong className="text-slate-700 dark:text-slate-300 font-semibold">{jardinInputs.activeIngredient}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Concentration :</span>
-                        <strong className="text-slate-700 dark:text-slate-300 font-mono font-medium">{jardinInputs.productConcentration} {jardinInputs.unit}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Délai de rentrée (DRE) :</span>
-                        <strong className="text-amber-600 font-semibold font-mono">{jardinInputs.reentryDelay}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Délai récolte (DAR) :</span>
-                        <strong className="text-blue-600 font-semibold font-mono">{jardinInputs.harvestDelay}</strong>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Preset weed selector cards */}
                   <div className="space-y-3">
@@ -4279,7 +3929,7 @@ export default function App() {
 
                     <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl">
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 animate-pulse-once">
-                        Concentration Produit
+                        Concentration Roundup
                       </label>
                       <select
                         value={isJardinConcCustom ? 'custom' : jardinInputs.productConcentration}
@@ -4295,14 +3945,14 @@ export default function App() {
                       >
                         {CONCENTRATION_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
-                            {opt.value} {jardinInputs.unit || 'g/L'}
+                            {opt.value} g/L
                           </option>
                         ))}
                         <option value="custom">Autre...</option>
                       </select>
                       {isJardinConcCustom && (
                         <div className="mt-2 text-slate-700 animate-fadeIn">
-                          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Concentration libre</label>
+                          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-0.5">Concentration libre (g/L)</label>
                           <input
                             type="number"
                             value={jardinInputs.productConcentration}
@@ -4358,36 +4008,36 @@ export default function App() {
                         <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 text-[11px] text-amber-800 flex gap-x-2 items-center">
                           <Info className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                           <span>
-                            Dosage automatiquement ajusté pour la concentration de <strong>{jardinInputs.productConcentration} {jardinInputs.unit}</strong> (Facteur {(360 / jardinInputs.productConcentration).toFixed(2)}x appliqué sur la dose de référence).
+                            Dosage automatiquement ajusté pour une concentration élevée de <strong>{jardinInputs.productConcentration} g/L</strong> (Facteur {(360 / jardinInputs.productConcentration).toFixed(2)}x appliqué sur le produit pur).
                           </span>
                         </div>
                       )}
 
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl">
-                          <span className="block text-[10px] text-slate-500 font-medium">Nom du Produit Sélectionné</span>
-                          <span className="text-xs font-bold font-sans text-slate-800 block truncate mt-1">
-                            {jardinInputs.productName}
+                          <span className="block text-[10px] text-slate-550 text-slate-555 text-slate-500 font-medium">Quantité totale de Roundup</span>
+                          <span className="text-xl font-bold font-mono text-rose-600 mt-1 block">
+                            {jardinOutputs.totalProduct} <span className="text-xs font-medium">ml</span>
                           </span>
                           <span className="text-[9px] text-slate-400 font-mono">
-                            AMM N° {jardinInputs.ammNumber}
+                            Soit {(jardinOutputs.totalProduct / 1000).toFixed(3)} Litre(s)
                           </span>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl">
-                          <span className="block text-[10px] text-slate-500 font-medium">Produit pur à doser</span>
-                          <span className="text-xl font-bold font-mono text-rose-600 mt-1 block">
-                            {jardinOutputs.totalProduct} <span className="text-xs font-medium">{jardinInputs.isDry ? 'g' : 'ml'}</span>
+                          <span className="block text-[10px] text-slate-550 text-slate-555 text-slate-500 font-medium">Volume d'eau requis</span>
+                          <span className="text-xl font-bold font-mono text-blue-600 mt-1 block">
+                            {jardinOutputs.totalWater} <span className="text-xs font-medium">L</span>
                           </span>
                           <span className="text-[9px] text-slate-400 font-mono">
-                            Soit {jardinInputs.isDry ? `${(jardinOutputs.totalProduct / 1000).toFixed(3)} kg` : `${(jardinOutputs.totalProduct / 1000).toFixed(3)} Litre(s)`}
+                            Eau à température moyenne
                           </span>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl col-span-2 md:col-span-1">
-                          <span className="block text-[10px] text-slate-500 font-medium">Eau & Bouillie totale</span>
-                          <span className="text-xl font-bold font-mono text-blue-600 mt-1 block">
-                            {jardinOutputs.totalWater} <span className="text-xs font-medium">L</span>
+                          <span className="block text-[10px] text-slate-550 text-slate-555 text-slate-500 font-medium">Bouillie de traitement</span>
+                          <span className="text-xl font-bold font-mono text-slate-800 mt-1 block">
+                            {jardinOutputs.totalBouillie} <span className="text-xs font-medium">L</span>
                           </span>
                           <span className="text-[9px] text-slate-400 font-mono">
                             Pour {jardinInputs.surface} m² de terrain
@@ -4428,11 +4078,11 @@ export default function App() {
                             <div className="absolute top-0 w-full h-1.5 bg-rose-500/25 border-b border-rose-500/10" />
                           </div>
 
-                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-1 font-sans">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-1">
                             <span className="text-[10px] font-mono font-extrabold text-emerald-700 bg-white border border-emerald-100 py-0.5 px-1.5 rounded">
-                              {jardinOutputs.productPerFullTank} {jardinInputs.isDry ? 'g' : 'ml'}
+                              {jardinOutputs.productPerFullTank} ml
                             </span>
-                            <span className="text-[8px] text-slate-500 font-semibold mt-1">de produit</span>
+                            <span className="text-[8px] text-slate-500 font-semibold mt-1">de Roundup</span>
                           </div>
                         </div>
                         <div className="text-[9px] text-slate-500 mt-2 text-center leading-tight font-mono">
@@ -4454,8 +4104,8 @@ export default function App() {
                             </p>
                             <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                               <div className="bg-slate-50 p-2 rounded-lg text-center">
-                                <span className="text-[10px] text-slate-400 block truncate">{jardinInputs.productName}</span>
-                                <span className="font-bold text-rose-600">{jardinOutputs.totalProduct} {jardinInputs.isDry ? 'g' : 'ml'}</span>
+                                <span className="text-[10px] text-slate-400 block">Roundup</span>
+                                <span className="font-bold text-rose-600">{jardinOutputs.totalProduct} ml</span>
                               </div>
                               <div className="bg-slate-50 p-2 rounded-lg text-center">
                                 <span className="text-[10px] text-slate-400 block">Eau claire</span>
@@ -4471,8 +4121,8 @@ export default function App() {
                               </div>
                               <ul className="space-y-1.5 text-xs text-slate-600 font-mono">
                                 <li className="flex justify-between">
-                                  <span>1. Dose de {jardinInputs.productName} :</span>
-                                  <span className="font-bold text-rose-600">{jardinOutputs.productPerFullTank} {jardinInputs.isDry ? 'g' : 'ml'}</span>
+                                  <span>1. Dose de Roundup :</span>
+                                  <span className="font-bold text-rose-600">{jardinOutputs.productPerFullTank} ml</span>
                                 </li>
                                 <li className="flex justify-between border-t border-slate-100 pt-1.5">
                                   <span>2. Volume d'eau d'appoint :</span>
@@ -4489,13 +4139,9 @@ export default function App() {
 
                         {/* Measuring tips */}
                         <div className="bg-emerald-50/10 p-3 rounded-xl border border-slate-150 text-[11px] text-slate-600 flex items-start gap-x-2">
-                          <span className="bg-slate-100 text-slate-500 border border-slate-200 font-mono font-bold px-1.5 py-0.5 rounded shrink-0">Repère</span>
+                          <span className="bg-slate-100 text-slate-600 border border-slate-205 border-slate-200 font-mono font-bold px-1.5 py-0.5 rounded shrink-0">Repère</span>
                           <span>
-                            {jardinInputs.isDry ? (
-                              `Ce produit est une formulation solide (poudre/granulés). Pesez précisément la quantité nécessaire (${jardinOutputs.productPerFullTank} g) à l'aide d'une balance de ménage ou d'une cuillère doseuse appropriée.`
-                            ) : (
-                              `Un bouchon de bouteille standard de ${jardinInputs.productName} correspond à environ 20 ml de produit liquide. Pour un pulvérisateur complet de ${jardinInputs.tankCapacity}L, versez l'équivalent de ${Math.round(jardinOutputs.productPerFullTank / 20 * 10) / 10} bouchon(s).`
-                            )}
+                            Un bouchon de bouteille standard de Roundup correspond à environ <strong>20 ml</strong> de produit. Pour un pulvérisateur complet de {jardinInputs.tankCapacity}L, versez l'équivalent de <strong>{Math.round(jardinOutputs.productPerFullTank / 20 * 10) / 10} bouchon(s)</strong>.
                           </span>
                         </div>
                       </div>
@@ -4778,7 +4424,7 @@ export default function App() {
                               <span>Période sans pluie</span>
                             </div>
                             <p className="leading-relaxed text-slate-500 dark:text-slate-400">
-                              Le produit <strong>"{mode === 'agri' ? agriInputs.productName : jardinInputs.productName}"</strong> nécessite généralement au moins <strong>2 à 6 heures sans pluie</strong> après application pour pénétrer correctement les cuticules des feuilles. Une pluie prématurée rincera le principe actif et établira un risque de lessivage vers les nappes phréatiques.
+                              Roundup nécessite au moins <strong>6 heures sans pluie</strong> après application pour pénétrer correctement les cuticules des feuilles. Une pluie prématurée rincera le principe actif et contaminera les sols.
                             </p>
                           </div>
 
@@ -5438,9 +5084,9 @@ export default function App() {
                       <div className="flex flex-wrap gap-1.5">
                         {[
                           { text: "Quels sont les symptômes de résistance du séneçon au glyphosate ?", label: "Résistance Adventices" },
-                          { text: `Trouve les déchetteries ou points de collecte d'emballages vides proches de moi (réseau ADIVALOR).`, label: "📍 Déchets & Recyclage" },
+                          { text: "Trouve les déchetteries de déchets de produits ou de flacons vides de Roundup proches de moi (réseau ADIVALOR).", label: "📍 Déchets & Recyclage" },
                           { text: "Quelles conditions atmosphériques de vent, de pluie et d'hygrométrie rendent une pulvérisation optimale ou illégale ?", label: "Droit & Météo" },
-                          { text: `Est-ce conseillé de mélanger du sulfate d'ammonium à l'eau de préparation pour optimiser l'efficacité de l'herbicide ?`, label: "Mélange & Dureté" }
+                          { text: "Est-ce conseillé de mélanger du sulfate d'ammonium au Roundup pour optimiser la dureté de l'eau ?", label: "Mélange & Dureté" }
                         ].map((sug, idx) => (
                           <button
                             key={idx}
@@ -5474,7 +5120,7 @@ export default function App() {
                           placeholder={
                             aiImageBase64 
                               ? "Décrivez ce que vous observez sur cette photo pour m'aider à poser le bon diagnostic..." 
-                              : `Posez votre question agronomique par exemple : "Quelles adventices résistent le plus et quel dosage de ${mode === 'agri' ? agriInputs.productName : jardinInputs.productName} appliquer ?"...`
+                              : "Posez votre question agronomique par exemple : \"Quelles adventices résistent le plus et quel dosage de Roundup appliquer ?\"..."
                           }
                           className={`w-full p-4 pr-12 rounded-2xl border text-xs focus:ring-2 focus:ring-teal-505 focus:outline-none transition-all ${
                             isDarkMode 
@@ -5598,6 +5244,24 @@ export default function App() {
                     )}
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {mode === 'phytos' && (
+              <motion.div
+                key="mode-phytos"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6 text-left animate-fade-in"
+              >
+                <PhytosManager
+                  isDarkMode={isDarkMode}
+                  exploitationData={exploitationData}
+                  onAddManualIft={handleAddManualIft}
+                  currentWindSpeed={weatherInput.wind}
+                />
               </motion.div>
             )}
 
@@ -6238,19 +5902,19 @@ export default function App() {
                   {mode === 'agri' ? (
                     <div className="space-y-1 text-[11px]">
                       <div>• Surface du lot : <strong>{agriInputs.surface} Hectares</strong></div>
-                      <div>• Eau globale requise : <strong>{agriOutputs.totalWater} L</strong> | {agriInputs.productName} pur : <strong>{agriOutputs.totalProduct} L</strong></div>
-                      <div>• Concentration : <strong>{agriInputs.productConcentration} {agriInputs.unit}</strong> | Capacité Cuve : <strong>{agriInputs.tankCapacity} L</strong></div>
+                      <div>• Eau globale requise : <strong>{agriOutputs.totalWater} L</strong> | Roundup pur : <strong>{agriOutputs.totalProduct} L</strong></div>
+                      <div>• Concentration Roundup : <strong>{agriInputs.productConcentration} g/L</strong> | Capacité Cuve : <strong>{agriInputs.tankCapacity} L</strong></div>
                       <div>• Remplissage : <strong>{agriOutputs.numTanks} cuve(s)</strong> ({agriOutputs.fullTanksCount} pleine(s) de {agriOutputs.productPerFullTank} L de produit / cuve)</div>
                       {agriOutputs.hasPartialTank && (
-                        <div>• Reste partiel de cuve : <strong>Eau {agriOutputs.partialTankWater} L + {agriInputs.productName} {agriOutputs.partialTankProduct} L</strong></div>
+                        <div>• Reste partiel de cuve : <strong>Eau {agriOutputs.partialTankWater} L + Produit {agriOutputs.partialTankProduct} L</strong></div>
                       )}
                     </div>
                   ) : (
                     <div className="space-y-1 text-[11px]">
                       <div>• Surface du lot : <strong>{jardinInputs.surface} m²</strong></div>
-                      <div>• Eau globale requise : <strong>{jardinOutputs.totalWater} L</strong> | {jardinInputs.productName} pur : <strong>{jardinOutputs.totalProduct} {jardinInputs.isDry ? 'g' : 'ml'}</strong></div>
-                      <div>• Concentration : <strong>{jardinInputs.productConcentration} {jardinInputs.unit}</strong> | Pulvérisateur : <strong>{jardinInputs.tankCapacity} L</strong></div>
-                      <div>• Cycles de remplissage manuel : <strong>{jardinOutputs.numTanks} fois</strong> ({jardinOutputs.productPerFullTank} {jardinInputs.isDry ? 'g' : 'ml'} de produit / cuve)</div>
+                      <div>• Eau globale requise : <strong>{jardinOutputs.totalWater} L</strong> | Roundup pur : <strong>{jardinOutputs.totalProduct} ml</strong></div>
+                      <div>• Concentration Roundup : <strong>{jardinInputs.productConcentration} g/L</strong> | Pulvérisateur : <strong>{jardinInputs.tankCapacity} L</strong></div>
+                      <div>• Cycles de remplissage manuel : <strong>{jardinOutputs.numTanks} fois</strong> ({jardinOutputs.productPerFullTank} ml de produit / cuve)</div>
                     </div>
                   )}
 
@@ -6333,15 +5997,15 @@ export default function App() {
             </tr>
             <tr>
               <td className="py-2 px-4 border-r border-black">Concentration de formulation (Matière Active)</td>
-              <td className="py-2 px-4 text-right">{mode === 'agri' ? `${agriInputs.productConcentration} ${agriInputs.unit} de ${agriInputs.activeIngredient}` : `${jardinInputs.productConcentration} ${jardinInputs.unit} de ${jardinInputs.activeIngredient}`}</td>
+              <td className="py-2 px-4 text-right">{mode === 'agri' ? `${agriInputs.productConcentration} g/L de Glyphosate` : `${jardinInputs.productConcentration} g/L de Glyphosate`}</td>
             </tr>
             <tr className="bg-neutral-100">
               <td className="py-2 px-4 border-r border-black font-bold">Volume total d'Eau Claire à charger</td>
               <td className="py-2 px-4 text-right font-bold text-neutral-900">{mode === 'agri' ? `${agriOutputs.totalWater} Litres` : `${jardinOutputs.totalWater} Litres`}</td>
             </tr>
             <tr className="bg-neutral-100">
-              <td className="py-2 px-4 border-r border-black font-bold">Volume total de Produit Pur à verser</td>
-              <td className="py-2 px-4 text-right font-bold text-neutral-950">{mode === 'agri' ? `${agriOutputs.totalProduct} Litres` : `${jardinOutputs.totalProduct} ${jardinInputs.isDry ? 'g' : 'ml'}`}</td>
+              <td className="py-2 px-4 border-r border-black font-bold">Volume total de Roundup Pur à verser</td>
+              <td className="py-2 px-4 text-right font-bold text-neutral-950">{mode === 'agri' ? `${agriOutputs.totalProduct} Litres` : `${jardinOutputs.totalProduct} ml`}</td>
             </tr>
             <tr>
               <td className="py-2 px-4 border-r border-black font-bold">Volume de bouillies total prêt à l'emploi</td>
@@ -6373,13 +6037,13 @@ export default function App() {
           <li>Activer l'agitateur mécanique ou le mélangeur hydraulique.</li>
           {mode === 'agri' ? (
             <>
-              <li>Incorporer lentement <strong>{agriOutputs.productPerFullTank} Litres</strong> de {agriInputs.productName} pur par cuve pleine (ou {agriOutputs.partialTankProduct} Litres pour la cuve partielle).</li>
+              <li>Incorporer lentement <strong>{agriOutputs.productPerFullTank} Litres</strong> de Roundup pur par cuve pleine (ou {agriOutputs.partialTankProduct} Litres pour la cuve partielle).</li>
               <li>Rincer le bidon vide à trois reprises et reverser l'eau claire de rinçage directement dans la cuve.</li>
               <li>Compléter avec les 50% restants d'eau pour atteindre la capacité requise ({agriInputs.tankCapacity} Litres).</li>
             </>
           ) : (
             <>
-              <li>Incorporer précisément <strong>{jardinOutputs.productPerFullTank} {jardinInputs.isDry ? 'g' : 'ml'}</strong> de {jardinInputs.productName} pur pour un réservoir complet de {jardinInputs.tankCapacity} Litres.</li>
+              <li>Incorporer précisément <strong>{jardinOutputs.productPerFullTank} ml</strong> de Roundup pur pour un réservoir complet de {jardinInputs.tankCapacity} Litres.</li>
               <li>Fermer hermétiquement le bouchon et agiter manuellement et lentement pendant au moins 30 secondes.</li>
               <li>Compléter avec l'eau claire jusqu'au repère de graduation ({jardinInputs.tankCapacity} Litres).</li>
             </>

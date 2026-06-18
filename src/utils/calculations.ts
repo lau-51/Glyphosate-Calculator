@@ -46,12 +46,10 @@ export const CONCENTRATION_OPTIONS = [
  * Perform agricultural sprayer computations
  */
 export function calculateAgri(inputs: AgriInputs): AgriOutputs {
-  const { surface, doseProduct, volumeWater, tankCapacity, productConcentration, isDry, ephyProductId } = inputs;
+  const { surface, doseProduct, volumeWater, tankCapacity, productConcentration } = inputs;
 
   // Base concentrations factors relative to standard 360g/L
-  // ONLY scale if there is no ephyProductId (legacy) or if it's explicitly the roundup-360 product
-  const isGlyphosateLegacy = !ephyProductId || ephyProductId === 'roundup-360';
-  const concFactor = isGlyphosateLegacy ? (360 / (productConcentration || 360)) : 1.0;
+  const concFactor = 360 / productConcentration;
   const adjustedDoseProduct = doseProduct * concFactor;
 
   const totalProduct = surface * adjustedDoseProduct;
@@ -67,10 +65,7 @@ export function calculateAgri(inputs: AgriInputs): AgriOutputs {
   const hasPartialTank = (numTanks - fullTanksCount) > 0.001;
 
   const productPerFullTank = tankCapacity * (doseHectareSafe / volumeHectareSafe);
-  
-  // Clean physically correct calculation: Dry powder does not displace water volume
-  const waterPerFullTank = isDry ? tankCapacity : (tankCapacity - productPerFullTank);
-  const totalWater = isDry ? totalBouillie : (totalBouillie - totalProduct);
+  const waterPerFullTank = tankCapacity - productPerFullTank;
 
   let partialTankWater = 0;
   let partialTankProduct = 0;
@@ -79,13 +74,12 @@ export function calculateAgri(inputs: AgriInputs): AgriOutputs {
     const remainingSurface = surface - (fullTanksCount * autonomieCuve);
     const partialTankBouillie = remainingSurface * volumeHectareSafe;
     partialTankProduct = remainingSurface * doseHectareSafe;
-    // Dry powder does not displace water
-    partialTankWater = isDry ? partialTankBouillie : (partialTankBouillie - partialTankProduct);
+    partialTankWater = partialTankBouillie - partialTankProduct;
   }
 
   return {
     totalProduct: Number(totalProduct.toFixed(2)),
-    totalWater: Number(totalWater.toFixed(2)),
+    totalWater: Number((totalBouillie - totalProduct).toFixed(2)),
     totalBouillie: Number(totalBouillie.toFixed(2)),
     numTanks: Number(numTanks.toFixed(2)),
     fullTanksCount,
@@ -102,25 +96,22 @@ export function calculateAgri(inputs: AgriInputs): AgriOutputs {
  * Perform gardening sprayer computations (manual / knapsack)
  */
 export function calculateJardin(inputs: JardinInputs): JardinOutputs {
-  const { surface, tankCapacity, dilutionPercent, coverageRate, productConcentration, isDry, ephyProductId } = inputs;
+  const { surface, tankCapacity, dilutionPercent, coverageRate, productConcentration } = inputs;
 
-  const isGlyphosateLegacy = !ephyProductId || ephyProductId === 'roundup-360';
   const conc = productConcentration || 360;
-  const concFactor = isGlyphosateLegacy ? (360 / conc) : 1.0;
+  const concFactor = 360 / conc;
   const activePercent = dilutionPercent * concFactor;
 
   // coverageRate: m² per 1 Liter of bouillie. Usually 10m²/L, meaning for 100m² we need 10L.
   const rateSafe = coverageRate || 10;
   const totalBouillie = surface / rateSafe;
   
-  // totalProduct in ml or g (1% = 10 ml/L or 10 g/L)
+  // totalProduct in ml
   const totalProduct = totalBouillie * (activePercent / 100) * 1000;
-  
-  // Dry powder doesn't displace liquid volume in knapsack
-  const totalWater = isDry ? totalBouillie : (totalBouillie - (totalProduct / 1000)); 
+  const totalWater = totalBouillie - (totalProduct / 1000); 
 
   const productPerFullTank = tankCapacity * (activePercent / 100) * 1000;
-  const waterPerFullTank = isDry ? tankCapacity : (tankCapacity - (productPerFullTank / 1000));
+  const waterPerFullTank = tankCapacity - (productPerFullTank / 1000);
 
   const numTanksStr = (totalBouillie / tankCapacity).toFixed(2);
   const numTanksRaw = parseFloat(numTanksStr);

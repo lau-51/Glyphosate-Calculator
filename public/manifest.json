@@ -1,19 +1,15 @@
 {
-  "name": "Calculateur de Dose Glyphosate",
-  "short_name": "Dose Glypho",
+  "name": "Calculateur de Dose Roundup",
+  "short_name": "Dose Roundup",
   "description": "Calculateur professionnel de dosage d'herbicide et d'aide au remplissage de cuve.",
-  "id": "Dose Glypho",
+  "id": "./",
   "scope": "./",
-  "start_url": "https://lau-51.github.io/Glyphosate-Calculator/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#10b981",
   "orientation": "portrait-primary",
-  "categories": [
-    "productivity",
-    "utilities",
-    "agriculture"
-  ],
+  "categories": ["productivity", "utilities", "agriculture"],
   "icons": [
     {
       "src": "icon-192.png",
@@ -45,8 +41,5 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
-  ],
-  "dir": "auto",
-  "lang": "fr",
-  "prefer_related_applications": true
+  ]
 }

@@ -314,7 +314,7 @@ export default function App() {
   });
 
   // Weather station simulation state and presets
-  const [weatherPreset, setWeatherPreset] = useState<string>('custom');
+  const [weatherPreset, setWeatherPreset] = useState<string>('gps-realtime');
 
   const [weatherInput, setWeatherInput] = useState({
     temp: 18,
@@ -885,6 +885,13 @@ export default function App() {
   useEffect(() => {
     if (dbLoaded) saveInputItem('fiches_historique', historicalFiches);
   }, [historicalFiches, dbLoaded]);
+
+  // Trigger GPS synchronization on mount/load if the default preset is set to gps-realtime
+  useEffect(() => {
+    if (dbLoaded && weatherPreset === 'gps-realtime' && !gpsCoords && !isGpsLoading) {
+      handleGpsSync();
+    }
+  }, [dbLoaded, weatherPreset, gpsCoords, isGpsLoading]);
 
   // Exploitations Management Handlers
   const handleAddNewExploitation = (name: string) => {

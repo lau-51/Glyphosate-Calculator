@@ -60,6 +60,7 @@ import ZntCalculator from './components/ZntCalculator';
 import TreatmentCalendar from './components/TreatmentCalendar';
 import HveIftDashboard from './components/HveIftDashboard';
 import HelpTutorials from './components/HelpTutorials';
+import ParcellesMap from './components/ParcellesMap';
 import { AppMode, AgriInputs, JardinInputs, ExploitationData, Applicator, Parcelle, ParcelleGroup, HistoricalFiche, ManualIftTreatment } from './types';
 import { 
   calculateAgri, 
@@ -208,9 +209,9 @@ export default function App() {
       { id: '2', name: 'L. Autreau', certiphyto: 'CP-4321-002' }
     ],
     parcelles: [
-      { id: 'p1', name: "Les Côtes d'Or", village: 'Gevrey', cru: 'Premier Cru', surface: 3.5, cepage: 'Pinot Noir' },
-      { id: 'p2', name: 'Sous la Roche', village: 'Chablis', cru: 'Grand Cru', surface: 1.8, cepage: 'Chardonnay' },
-      { id: 'p3', name: 'Le Closeau', village: 'Nuits-Saint-Georges', cru: 'Village', surface: 5.2, cepage: 'Pinot Noir' }
+      { id: 'p1', name: "Les Côtes d'Or", village: 'Gevrey', cru: 'Premier Cru', surface: 3.5, cepage: 'Pinot Noir', latitude: 47.219, longitude: 4.965 },
+      { id: 'p2', name: 'Sous la Roche', village: 'Chablis', cru: 'Grand Cru', surface: 1.8, cepage: 'Chardonnay', latitude: 47.811, longitude: 3.795 },
+      { id: 'p3', name: 'Le Closeau', village: 'Nuits-Saint-Georges', cru: 'Village', surface: 5.2, cepage: 'Pinot Noir', latitude: 47.135, longitude: 4.951 }
     ],
     groupements: [
       { id: 'g1', name: 'Vignes Rouges', parcelleIds: ['p1', 'p3'] }
@@ -257,6 +258,9 @@ export default function App() {
   const [newParcelCru, setNewParcelCru] = useState('');
   const [newParcelSurface, setNewParcelSurface] = useState('');
   const [newParcelCepage, setNewParcelCepage] = useState('');
+  const [newParcelLat, setNewParcelLat] = useState('');
+  const [newParcelLng, setNewParcelLng] = useState('');
+  const [activeMapParcelId, setActiveMapParcelId] = useState<string | null>(null);
 
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupSelectedParcelles, setNewGroupSelectedParcelles] = useState<string[]>([]);
@@ -947,15 +951,27 @@ export default function App() {
     }));
   };
 
-  const handleAddParcelle = (parcel: { name: string; village: string; cru: string; surface: number; cepage: string }) => {
+  const handleAddParcelle = (parcel: { name: string; village: string; cru: string; surface: number; cepage: string; latitude?: number; longitude?: number }) => {
     if (!parcel.name.trim()) return;
+
+    // Default base coordinates (Burgundy wine region)
+    const baseLat = 47.15;
+    const baseLng = 4.93;
+    const offsetLat = (Math.random() - 0.5) * 0.08;
+    const offsetLng = (Math.random() - 0.5) * 0.08;
+
+    const latVal = parcel.latitude !== undefined && !isNaN(parcel.latitude) ? parcel.latitude : (baseLat + offsetLat);
+    const lngVal = parcel.longitude !== undefined && !isNaN(parcel.longitude) ? parcel.longitude : (baseLng + offsetLng);
+
     const newParcel: Parcelle = {
       id: 'p-' + Date.now().toString(),
       name: parcel.name.trim(),
       village: parcel.village.trim() || 'Non renseigné',
       cru: parcel.cru.trim() || 'N/A',
       surface: Number(parcel.surface) || 0,
-      cepage: parcel.cepage.trim() || 'Non spécifié'
+      cepage: parcel.cepage.trim() || 'Non spécifié',
+      latitude: Number(latVal) || (baseLat + offsetLat),
+      longitude: Number(lngVal) || (baseLng + offsetLng)
     };
     updateActiveExploitation(prev => ({
       ...prev,
@@ -1876,21 +1892,6 @@ export default function App() {
             </button>
 
             <button
-              id="tab-ai"
-              onClick={() => setMode('ai')}
-              className={`flex items-center justify-center gap-x-2 py-3.5 px-3 rounded-2xl font-medium text-sm transition-all duration-200 border cursor-pointer ${
-                mode === 'ai'
-                  ? 'bg-teal-600 border-teal-600 text-white shadow-sm font-semibold shadow-teal-555/40'
-                  : (isDarkMode 
-                      ? 'bg-slate-900 border-slate-800 hover:border-teal-500/40 hover:bg-slate-850 text-slate-400 hover:text-white' 
-                      : 'bg-white border-slate-200 hover:border-teal-500/40 hover:bg-slate-50 text-slate-600 hover:text-slate-900')
-              }`}
-            >
-              <Bot className="w-4 h-4 text-teal-400" />
-              <span>Conseils & Diagnostic IA</span>
-            </button>
-
-            <button
               id="tab-help"
               onClick={() => setMode('help')}
               className={`flex items-center justify-center gap-x-2 py-3.5 px-3 rounded-2xl font-medium text-sm transition-all duration-200 border cursor-pointer ${
@@ -2045,6 +2046,46 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* ====== CARTOGRAPHiE DES PARCELLES (GIS MAP) ====== */}
+                <div className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200/85 shadow-xs'}`}>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-x-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Cartographie Interactive & Cadastre Local</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Positionnez vos parcelles, visualisez leurs tailles relatives et cliquez sur l'un d'eux pour le sélectionner directement.
+                      </p>
+                    </div>
+                    {activeMapParcelId && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-bold px-3 py-1 rounded-xl">
+                          Sélectionné : {exploitationData.parcelles.find(p => p.id === activeMapParcelId)?.name || 'Inconnue'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMapParcelId(null)}
+                          className="text-xs text-slate-400 hover:text-slate-650 cursor-pointer text-slate-500 dark:hover:text-slate-300 transition-colors"
+                        >
+                          Désélectionner
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <ParcellesMap
+                    parcelles={exploitationData.parcelles}
+                    selectedParcelId={activeMapParcelId}
+                    onSelectParcel={(id) => setActiveMapParcelId(id)}
+                    isDarkMode={isDarkMode}
+                    onMapClickCoordinate={(lat, lng) => {
+                      setNewParcelLat(lat.toFixed(6));
+                      setNewParcelLng(lng.toFixed(6));
+                    }}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   {/* LEFT COLUMN: Identity & Applicators */}
                   <div className="lg:col-span-4 space-y-6">
@@ -2193,38 +2234,64 @@ export default function App() {
                               </tr>
                             </thead>
                             <tbody>
-                              {exploitationData.parcelles.map((p) => (
-                                <tr 
-                                  key={p.id} 
-                                  className={`border-b last:border-0 hover:bg-emerald-500/5 transition-colors ${
-                                    isDarkMode ? 'border-slate-800/65' : 'border-slate-150'
-                                  }`}
-                                >
-                                  <td className="py-3 px-2 font-bold">{p.name}</td>
-                                  <td className="py-3 px-2">{p.village}</td>
-                                  <td className="py-3 px-2">{p.cru}</td>
-                                  <td className="py-3 px-2 text-right font-mono font-bold text-emerald-500 dark:text-emerald-400">{p.surface} ha</td>
-                                  <td className="py-3 px-2"><span className="px-1.5 py-0.5 rounded bg-slate-500/10 text-[10px] font-bold">{p.cepage}</span></td>
-                                  <td className="py-3 px-2 text-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteParcelle(p.id)}
-                                      className="p-1 px-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-505 text-red-500 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
-                                      title="Supprimer cette parcelle"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
+                              {exploitationData.parcelles.map((p) => {
+                                const isSelected = activeMapParcelId === p.id;
+                                return (
+                                  <tr 
+                                    key={p.id} 
+                                    onClick={() => setActiveMapParcelId(p.id)}
+                                    className={`border-b last:border-0 hover:bg-emerald-500/5 transition-all cursor-pointer ${
+                                      isSelected 
+                                        ? 'bg-emerald-500/10 dark:bg-emerald-500/15 font-bold border-l-4 border-l-emerald-500 border-slate-700 dark:border-slate-800' 
+                                        : (isDarkMode ? 'border-slate-800/65' : 'border-slate-150')
+                                    }`}
+                                  >
+                                    <td className="py-3 px-2 font-bold flex items-center gap-x-1.5">
+                                      {isSelected && <span className="text-emerald-500 animate-pulse">🎯</span>}
+                                      <span>{p.name}</span>
+                                    </td>
+                                    <td className="py-3 px-2">{p.village}</td>
+                                    <td className="py-3 px-2">{p.cru}</td>
+                                    <td className="py-3 px-2 text-right font-mono font-bold text-emerald-500 dark:text-emerald-400">{p.surface} ha</td>
+                                    <td className="py-3 px-2"><span className="px-1.5 py-0.5 rounded bg-slate-500/10 text-[10px] font-bold">{p.cepage}</span></td>
+                                    <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                                      <div className="flex items-center justify-center gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => setActiveMapParcelId(p.id)}
+                                          className={`p-1 px-1.5 rounded-lg border transition-all cursor-pointer ${
+                                            isSelected
+                                              ? 'bg-emerald-600 text-white border-emerald-600'
+                                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 hover:bg-emerald-500/20'
+                                          }`}
+                                          title="Localiser sur la carte"
+                                        >
+                                          <MapPin className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteParcelle(p.id)}
+                                          className="p-1 px-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
+                                          title="Supprimer cette parcelle"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
                       )}
 
                       {/* Add Plot Form */}
-                      <div className={`mt-5 p-4 rounded-xl border border-dashed ${isDarkMode ? 'border-slate-805 bg-slate-950/40' : 'border-slate-300 bg-white/50'}`}>
-                        <h4 className="text-xs font-bold mb-3">Nouvelle Parcelle</h4>
+                      <div className={`mt-5 p-4 rounded-xl border border-dashed ${isDarkMode ? 'border-slate-850 bg-slate-950/40' : 'border-slate-300 bg-white/50'}`}>
+                        <h4 className="text-xs font-bold mb-3 flex items-center gap-x-1.5 text-slate-800 dark:text-slate-200">
+                          <span>Nouvelle Parcelle</span>
+                          <span className="text-[10px] font-normal text-slate-400 font-sans">(Astuce: Cliquez sur la carte ci-dessus pour pré-remplir l'emplacement)</span>
+                        </h4>
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                           <input
                             type="text"
@@ -2273,7 +2340,38 @@ export default function App() {
                             }`}
                           />
                         </div>
-                        <div className="mt-3 flex justify-end">
+
+                        {/* Coordonnées Géographiques row */}
+                        <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-w-md">
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Latitude GPS</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              value={newParcelLat}
+                              onChange={(e) => setNewParcelLat(e.target.value)}
+                              placeholder="ex: 47.150000"
+                              className={`w-full p-2 rounded-lg text-xs border outline-hidden ${
+                                isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-350' : 'bg-white border-slate-200 text-slate-800'
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-1">Longitude GPS</label>
+                            <input
+                              type="number"
+                              step="0.000001"
+                              value={newParcelLng}
+                              onChange={(e) => setNewParcelLng(e.target.value)}
+                              placeholder="ex: 4.930000"
+                              className={`w-full p-2 rounded-lg text-xs border outline-hidden ${
+                                isDarkMode ? 'bg-slate-950 border-slate-800 text-slate-350' : 'bg-white border-slate-200 text-slate-800'
+                              }`}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex justify-end">
                           <button
                             type="button"
                             onClick={() => {
@@ -2282,13 +2380,17 @@ export default function App() {
                                 village: newParcelVillage,
                                 cru: newParcelCru,
                                 surface: Number(newParcelSurface) || 0,
-                                cepage: newParcelCepage
+                                cepage: newParcelCepage,
+                                latitude: newParcelLat ? Number(newParcelLat) : undefined,
+                                longitude: newParcelLng ? Number(newParcelLng) : undefined
                               });
                               setNewParcelName('');
                               setNewParcelVillage('');
                               setNewParcelCru('');
                               setNewParcelSurface('');
                               setNewParcelCepage('');
+                              setNewParcelLat('');
+                              setNewParcelLng('');
                             }}
                             className="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm cursor-pointer transition-colors"
                           >
@@ -4882,360 +4984,6 @@ export default function App() {
                   isProMode={isProMode}
                   exploitationData={exploitationData}
                 />
-              </motion.div>
-            )}
-
-            {mode === 'ai' && (
-              <motion.div
-                key="mode-ai"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-6 text-left"
-              >
-                {/* Header view */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h2 className={`text-lg font-bold font-display flex items-center gap-x-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                      <Bot className="w-5.5 h-5.5 text-teal-500 animate-pulse" />
-                      <span>Agro-Assistant Expert & Diagnostic IA</span>
-                    </h2>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'} mt-1`}>
-                      Posez des questions agronomiques complexes, analysez des photos de nuisibles et recherchez des points d'intérêts locaux via l'intelligence Gemini.
-                    </p>
-                  </div>
-                  
-                  {/* Status Indicator */}
-                  <div className={`p-2 px-3 rounded-xl border text-xs flex items-center gap-x-2 ${
-                    isDarkMode ? 'bg-slate-950/40 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
-                  }`}>
-                    <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-                    <span>Moteur d'inférence sécurisé</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Configuration & Input Col (5 cols) */}
-                  <div className="lg:col-span-5 space-y-5">
-                    {/* Choose AI intelligence level */}
-                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-950/20 border-slate-800' : 'bg-white border-slate-200'} space-y-3`}>
-                      <label className={`text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Niveau d'Intelligence requis:
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { id: 'gemini-3.1-flash-lite', label: '⚡ Flash Lite', desc: 'Ultra-Rapide' },
-                          { id: 'gemini-3.5-flash', label: '💡 Standard', desc: 'Équilibré' },
-                          { id: 'gemini-3.1-pro-preview', label: '🧠 Pro-Preview', desc: 'Raisonnement' }
-                        ].map((tier) => {
-                          const isSel = (aiImageBase64 ? 'gemini-3.1-pro-preview' : isAiHighThinking ? 'gemini-3.1-pro-preview' : isAiMapsGrounding ? 'gemini-3.5-flash' : aiModelUsed || 'gemini-3.5-flash') === tier.id;
-                          return (
-                            <button
-                              key={tier.id}
-                              type="button"
-                              disabled={!!aiImageBase64 || isAiHighThinking || isAiMapsGrounding}
-                              onClick={() => setAiModelUsed(tier.id)}
-                              className={`p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-                                isSel
-                                  ? 'bg-teal-500/10 border-teal-500 text-teal-600 dark:text-teal-400 font-bold'
-                                  : (isDarkMode 
-                                      ? 'bg-slate-900/50 hover:bg-slate-850 border-slate-800 text-slate-400' 
-                                      : 'bg-slate-50 hover:bg-slate-100 border-slate-202 text-slate-600')
-                              } disabled:opacity-50`}
-                            >
-                              <span className="text-[11px] font-bold">{tier.label}</span>
-                              <span className="text-[9px] font-normal opacity-80 mt-0.5">{tier.desc}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      
-                      {aiImageBase64 ? (
-                        <p className="text-[10px] text-amber-500 italic">
-                          ℹ️ Photo détectée : le modèle expert <strong>gemini-3.1-pro-preview</strong> est sélectionné d'office.
-                        </p>
-                      ) : isAiHighThinking ? (
-                        <p className="text-[10px] text-amber-505 italic">
-                          ℹ️ Haute Réflexion active : bascule sur <strong>gemini-3.1-pro-preview</strong>.
-                        </p>
-                      ) : isAiMapsGrounding ? (
-                        <p className="text-[10px] text-amber-500 italic">
-                          ℹ️ Mode Maps activé : le modèle <strong>gemini-3.5-flash</strong> est requis.
-                        </p>
-                      ) : null}
-                    </div>
-
-                    {/* Features options (Deep Thinking & Maps Grounding) */}
-                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-950/20 border-[#1e293b]' : 'bg-white border-[#e2e8f0]'} space-y-4`}>
-                      <h3 className={`text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Paramètres d'Analyse :
-                      </h3>
-
-                      {/* Google Maps Search Grounding */}
-                      <label className="flex items-start gap-x-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={isAiMapsGrounding}
-                          onChange={(e) => {
-                            const val = e.target.checked;
-                            setIsAiMapsGrounding(val);
-                            if (val) {
-                              setIsAiHighThinking(false);
-                            }
-                          }}
-                          className="mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                        />
-                        <div>
-                          <div className={`text-xs font-bold flex items-center gap-x-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-805'}`}>
-                            <MapPin className="w-3.5 h-3.5 text-teal-500" />
-                            <span>Cartographie Google Maps Live</span>
-                          </div>
-                          <p className="text-[10px] text-slate-450 mt-0.5 leading-relaxed">
-                            Interroge le moteur Maps pour géo-sélectionner les coopératives, distributeurs d'EPI, déchèteries et points de collecte proches de votre position.
-                          </p>
-                        </div>
-                      </label>
-
-                      {/* High Thinking Mode Toggle */}
-                      <label className="flex items-start gap-x-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={isAiHighThinking}
-                          disabled={isAiMapsGrounding}
-                          onChange={(e) => {
-                            setIsAiHighThinking(e.target.checked);
-                          }}
-                          className="mt-1 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:opacity-50"
-                        />
-                        <div className={isAiMapsGrounding ? 'opacity-50' : ''}>
-                          <div className={`text-xs font-bold flex items-center gap-x-1.5 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                            <span>Haute Réflexion (Deep Thinking 🧠)</span>
-                          </div>
-                          <p className="text-[10px] text-slate-450 mt-0.5 leading-relaxed">
-                            Indispensable pour résoudre des cas compliqués de résistances, des plans d'épandage alternatifs ou mélanges délicats de produits.
-                          </p>
-                        </div>
-                      </label>
-                    </div>
-
-                    {/* Drag & Drop weed photo analyzer */}
-                    <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-slate-950/20 border-[#1e293b]' : 'bg-white border-[#e2e8f0]'} space-y-3`}>
-                      <h3 className={`text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                        📸 Analyse d'image de terrain:
-                      </h3>
-                      
-                      {!aiImagePreview ? (
-                        <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl p-6 flex flex-col items-center text-center justify-center hover:border-teal-500/60 transition-all cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleAiImageUpload}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <Upload className="w-7 h-7 text-slate-400 dark:text-slate-655 mb-2" />
-                          <span className={`text-xs font-semibold ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                            Déposer une photo ou cliquer pour charger
-                          </span>
-                          <span className="text-[10px] text-slate-400 mt-1">
-                            (Identifie adventices, mauvaises herbes, maladies)
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-800">
-                          <img
-                            src={aiImagePreview}
-                            alt="Preview adventice"
-                            className="w-full h-40 object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleClearAiImage}
-                            className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow transition-all cursor-pointer"
-                            title="Supprimer la photo"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="p-2 bg-slate-950/80 text-white text-[10px] text-center font-semibold">
-                            Photo chargée avec succès !
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Dialogue & Results Col (7 cols) */}
-                  <div className="lg:col-span-7 flex flex-col space-y-4">
-                    {/* Suggested questions container */}
-                    <div className="space-y-2">
-                      <span className={`text-xs font-bold ${isDarkMode ? 'text-slate-400' : 'text-slate-505'} block`}>
-                        💡 Exemples de questions / situations types:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { text: "Quels sont les symptômes de résistance du séneçon au glyphosate ?", label: "Résistance Adventices" },
-                          { text: "Trouve les déchetteries de déchets de produits ou de flacons vides de Roundup proches de moi (réseau ADIVALOR).", label: "📍 Déchets & Recyclage" },
-                          { text: "Quelles conditions atmosphériques de vent, de pluie et d'hygrométrie rendent une pulvérisation optimale ou illégale ?", label: "Droit & Météo" },
-                          { text: "Est-ce conseillé de mélanger du sulfate d'ammonium au Roundup pour optimiser la dureté de l'eau ?", label: "Mélange & Dureté" }
-                        ].map((sug, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              setAiPrompt(sug.text);
-                              if (sug.text.includes("Trouve les déch")) {
-                                setIsAiMapsGrounding(true);
-                              }
-                            }}
-                            className={`p-2 rounded-xl text-left border transition-all cursor-pointer ${
-                              isDarkMode 
-                                ? 'bg-slate-900 hover:bg-slate-850 hover:border-teal-500/30 border-slate-800 text-slate-300' 
-                                : 'bg-white hover:bg-slate-50 hover:border-teal-500/30 border-slate-205 text-slate-600'
-                            }`}
-                          >
-                            <span className="text-teal-600 dark:text-teal-400 font-bold block mb-0.5 text-[10px]">[{sug.label}]</span>
-                            <span className="line-clamp-1 text-[10px] opacity-90">{sug.text}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Chat Question Input Form */}
-                    <form onSubmit={(e) => { e.preventDefault(); handleAiSubmit(); }} className="space-y-3">
-                      <div className="relative">
-                        <textarea
-                          rows={3}
-                          value={aiPrompt}
-                          onChange={(e) => setAiPrompt(e.target.value)}
-                          placeholder={
-                            aiImageBase64 
-                              ? "Décrivez ce que vous observez sur cette photo pour m'aider à poser le bon diagnostic..." 
-                              : "Posez votre question agronomique par exemple : \"Quelles adventices résistent le plus et quel dosage de Roundup appliquer ?\"..."
-                          }
-                          className={`w-full p-4 pr-12 rounded-2xl border text-xs focus:ring-2 focus:ring-teal-505 focus:outline-none transition-all ${
-                            isDarkMode 
-                              ? 'bg-slate-950/70 border-slate-800 text-slate-100 placeholder-slate-500 focus:border-teal-500' 
-                              : 'bg-white border-slate-201 text-slate-850 placeholder-slate-400 focus:border-teal-600'
-                          }`}
-                        />
-                        <button
-                          type="submit"
-                          disabled={isAiLoading || (!aiPrompt && !aiImageBase64)}
-                          className={`absolute bottom-3.5 right-3 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                            (!aiPrompt && !aiImageBase64) || isAiLoading
-                              ? (isDarkMode ? 'bg-slate-850 text-slate-600' : 'bg-slate-100 text-slate-300')
-                              : 'bg-teal-600 text-white hover:bg-teal-700 shadow-sm'
-                          }`}
-                        >
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </form>
-
-                    {/* Loading Screen Indicator */}
-                    {isAiLoading && (
-                      <div className={`p-6 rounded-2xl border flex flex-col items-center justify-center text-center space-y-3 ${
-                        isDarkMode ? 'bg-slate-950/40 border-slate-850' : 'bg-slate-50 border-slate-200'
-                      }`}>
-                        <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
-                        <div>
-                          <p className="text-xs font-bold text-slate-850 dark:text-slate-100">Consultation des experts Gemini en cours...</p>
-                          <p className="text-[11px] text-slate-450 mt-1 max-w-sm">
-                            {isAiHighThinking 
-                              ? "🧠 Mode Haute Réflexion Actif. Gemini structure une réponse avec étapes logiques approfondies. Cela peut prendre 5 à 15 secondes."
-                              : isAiMapsGrounding
-                              ? "📍 Mode Cartographie Actif. Interrogation en direct de l'API Google Maps pour recouper les informations géographiques."
-                              : "⚡ Analyse et rédaction des conseils d'utilisation sécurisés..."}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Error output display */}
-                    {aiError && (
-                      <div className="p-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-x-2.5">
-                        <AlertTriangle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-bold">Une erreur est survenue lors de l'appel à l'IA :</span>
-                          <p className="mt-1 opacity-90 leading-relaxed font-mono text-[10px]">{aiError}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Answer results compartment */}
-                    {aiResponse && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex-1 p-5 rounded-2xl border border-l-4 text-left ${
-                          isDarkMode 
-                            ? 'bg-slate-950/45 border-slate-800 border-l-teal-500' 
-                            : 'bg-white border-slate-200 border-l-teal-600 shadow-sm'
-                        }`}
-                      >
-                        {/* Meta header labels */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-850 pb-3 mb-4 text-[10px] font-mono text-slate-400 dark:text-slate-500">
-                          <span className="flex items-center gap-x-1 uppercase tracking-wider font-extrabold text-teal-600 dark:text-teal-400">
-                            <Bot className="w-3.5 h-3.5 animate-pulse" />
-                            <span>Conseiller IA : Diagnostic Final</span>
-                          </span>
-                          <span className="p-1 px-2 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shrink-0">
-                            Modèle : <strong className="text-slate-700 dark:text-slate-300">{aiModelUsed || (aiImageBase64 ? 'gemini-3.1-pro-preview' : isAiMapsGrounding ? 'gemini-3.5-flash' : 'gemini-3.5-flash')}</strong>
-                            {isAiHighThinking && <span className="text-amber-500 ml-1 font-bold">🧠 (Deep-Thinking)</span>}
-                          </span>
-                        </div>
-
-                        {/* Renders formatted text block */}
-                        <div className="space-y-1.5 prose prose-invert max-w-none">
-                          {renderFormattedText(aiResponse)}
-                        </div>
-
-                        {/* Grounding Source references map link outputs */}
-                        {aiGroundingChunks && aiGroundingChunks.length > 0 && (
-                          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-850 text-left shadow-none">
-                            <h4 className="text-[11px] uppercase tracking-widest font-mono font-bold text-teal-600 dark:text-teal-400 mb-3 flex items-center gap-x-1.5 shadow-none">
-                              <MapPin className="w-3.5 h-3.5" />
-                              <span>Résultats & Lieux vérifiés (Google Maps) :</span>
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 shadow-none">
-                              {aiGroundingChunks.map((chunk: any, i: number) => {
-                                const title = chunk.maps?.title || chunk.web?.title || `Lieu vérifié #${i + 1}`;
-                                const uri = chunk.maps?.uri || chunk.web?.uri;
-                                if (!uri) return null;
-                                return (
-                                  <a
-                                    key={i}
-                                    href={uri}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`flex items-start gap-x-2.5 p-3 rounded-xl border transition-all text-xs font-semibold ${
-                                      isDarkMode 
-                                        ? 'border-slate-800 bg-slate-900/40 hover:bg-slate-850 hover:border-teal-500/30 text-slate-300' 
-                                        : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-teal-500/30 text-slate-700'
-                                    }`}
-                                  >
-                                    <Building2 className="w-4 h-4 shrink-0 text-teal-500 mt-0.5" />
-                                    <div className="min-w-0 flex-1">
-                                      <span className="block font-bold hover:underline truncate">{title}</span>
-                                      <span className="block text-[9px] text-slate-405 dark:text-slate-500 truncate mt-0.5">{uri}</span>
-                                      {chunk.maps?.placeAnswerSources?.reviewSnippets && chunk.maps.placeAnswerSources.reviewSnippets.length > 0 && (
-                                        <p className="text-[9px] text-slate-400 dark:text-slate-500 italic mt-1 font-normal line-clamp-2 leading-relaxed">
-                                          "{chunk.maps.placeAnswerSources.reviewSnippets[0]}"
-                                        </p>
-                                      )}
-                                    </div>
-                                  </a>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </div>
-                </div>
               </motion.div>
             )}
 

@@ -515,7 +515,7 @@ export default function HelpTutorials({
               <span>Besoin d'une réponse réglementaire ?</span>
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-405 leading-relaxed">
-              Consultez notre <strong>Conseils & Diagnostic IA</strong> doté du moteur d'intelligence Gemini pour analyser vos parcelles, vos adventices, vos dosages ou les ZNT locales.
+              Consultez nos tutoriels détaillés et guides réglementaires pour analyser vos parcelles, contrôler vos dosages ou les ZNT locales.
             </p>
           </div>
 

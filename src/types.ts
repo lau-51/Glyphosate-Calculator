@@ -13,6 +13,8 @@ export interface Parcelle {
   cru: string;
   surface: number; // in ha
   cepage: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ParcelleGroup {

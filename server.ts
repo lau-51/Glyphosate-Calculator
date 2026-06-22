@@ -143,7 +143,14 @@ app.use(limiter);
 
 app.get('/:path', function(req, res) {
   const requestedPath = req.params.path;
-  const resolvedPath = path.resolve(distPath, requestedPath);
+
+  // Allow only simple safe file names (no path separators / traversal).
+  if (!/^[a-zA-Z0-9._-]+$/.test(requestedPath)) {
+    res.status(400).send("Invalid path");
+    return;
+  }
+
+  const resolvedPath = path.join(distPath, requestedPath);
 
   if (!resolvedPath.startsWith(distPath + path.sep) && resolvedPath !== distPath) {
     res.status(403).send("Forbidden");

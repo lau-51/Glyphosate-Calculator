@@ -42,9 +42,8 @@ self.addEventListener('fetch', (event) => {
   // Évite de mettre en cache les extensions de navigateur ou ressources externes non désirées
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) {
-    // On laisse passer les CDNs de polices par exemple (hôtes explicitement autorisés)
-    const allowedExternalHosts = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
-    if (allowedExternalHosts.has(url.hostname.toLowerCase())) {
+    // On laisse passer les CDNs de polices par exemple
+    if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
       event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;

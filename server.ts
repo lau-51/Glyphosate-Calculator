@@ -128,36 +128,10 @@ async function startServer() {
     console.log("Starting server in PRODUCTION mode serving from dist/...");
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    var express = require('express');
-
-// set up rate limiter: maximum of five requests per minute
-var RateLimit = require('express-rate-limit');
-var limiter = RateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per windowMs
-});
-
-// apply rate limiter to all requests
-app.use(limiter);
-
-app.get('/:path', function(req, res) {
-  const requestedPath = req.params.path;
-
-  // Allow only simple safe file names (no path separators / traversal).
-  if (!/^[a-zA-Z0-9._-]+$/.test(requestedPath)) {
-    res.status(400).send("Invalid path");
-    return;
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
   }
-
-  const resolvedPath = path.join(distPath, requestedPath);
-
-  if (!resolvedPath.startsWith(distPath + path.sep) && resolvedPath !== distPath) {
-    res.status(403).send("Forbidden");
-    return;
-  }
-
-  res.sendFile(resolvedPath);
-});
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server listening on port ${PORT}`);
@@ -165,4 +139,3 @@ app.get('/:path', function(req, res) {
 }
 
 startServer();
-}

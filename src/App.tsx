@@ -340,7 +340,7 @@ export default function App() {
   // AI Feature States
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiImageBase64, setAiImageBase64] = useState<string | null>(null);
-  const [aiImageFile, setAiImageFile] = useState<File | null>(null);
+  const [aiImagePreview, setAiImagePreview] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiResponse, setAiResponse] = useState<string>('');
   const [aiModelUsed, setAiModelUsed] = useState<string>('');
@@ -349,41 +349,14 @@ export default function App() {
   const [isAiMapsGrounding, setIsAiMapsGrounding] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  const aiImagePreviewUrl = useMemo(() => {
-    if (!aiImageFile) return null;
-    return URL.createObjectURL(aiImageFile);
-  }, [aiImageFile]);
-
-  useEffect(() => {
-    return () => {
-      if (aiImagePreviewUrl) {
-        URL.revokeObjectURL(aiImagePreviewUrl);
-      }
-    };
-  }, [aiImagePreviewUrl]);
-
   // File upload reader
-
   const handleAiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const allowedImageTypes = new Set([
-      'image/png',
-      'image/jpeg',
-      'image/jpg',
-      'image/webp',
-      'image/gif'
-    ]);
-
-    if (!allowedImageTypes.has(file.type)) {
-      setAiImagePreview(null);
-      setAiImageBase64(null);
-      return;
-    }
     
-    // Create preview source
-    setAiImageFile(file);
+    // Create preview
+    const previewUrl = URL.createObjectURL(file);
+    setAiImagePreview(previewUrl);
 
     // Convert to base64
     const reader = new FileReader();
@@ -5070,7 +5043,7 @@ export default function App() {
                       ) : (
                         <div className="relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-800">
                           <img
-                            src={aiImagePreviewUrl ?? ''}
+                            src={aiImagePreview}
                             alt="Preview adventice"
                             className="w-full h-40 object-cover"
                             referrerPolicy="no-referrer"

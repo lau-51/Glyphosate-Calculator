@@ -145,15 +145,8 @@ var limiter = RateLimit({
 // apply rate limiter to all requests
 app.use(limiter);
 
-app.get('/:path', function(req, res) {
-  const requestedPath = req.params.path;
-  const safeFullPath = path.resolve(distPath, requestedPath);
-
-  if (safeFullPath !== distPath && !safeFullPath.startsWith(distPath + path.sep)) {
-    return res.status(403).send("Forbidden");
-  }
-
-  res.sendFile(safeFullPath);
+app.get("*", function(req, res) {
+  res.sendFile(path.join(distPath, "index.html"));
 });
   
   app.listen(PORT, "0.0.0.0", () => {

@@ -350,6 +350,11 @@ export default function App() {
   const [aiError, setAiError] = useState<string | null>(null);
 
   // File upload reader
+  const sanitizeAiImagePreviewUrl = (url: string | null): string | null => {
+    if (!url) return null;
+    return url.startsWith('blob:') ? url : null;
+  };
+
   const handleAiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -373,7 +378,7 @@ export default function App() {
       URL.revokeObjectURL(aiImagePreview);
     }
     const previewUrl = URL.createObjectURL(file);
-    setAiImagePreview(previewUrl);
+    setAiImagePreview(sanitizeAiImagePreviewUrl(previewUrl));
 
     // Convert to base64
     const reader = new FileReader();
@@ -5060,7 +5065,7 @@ export default function App() {
                       ) : (
                         <div className="relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-800">
                           <img
-                            src={aiImagePreview}
+                            src={sanitizeAiImagePreviewUrl(aiImagePreview) ?? ''}
                             alt="Preview adventice"
                             className="w-full h-40 object-cover"
                             referrerPolicy="no-referrer"

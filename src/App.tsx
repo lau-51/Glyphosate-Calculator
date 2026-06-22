@@ -957,8 +957,13 @@ export default function App() {
     // Default base coordinates (Burgundy wine region)
     const baseLat = 47.15;
     const baseLng = 4.93;
-    const offsetLat = (Math.random() - 0.5) * 0.08;
-    const offsetLng = (Math.random() - 0.5) * 0.08;
+    const secureRandomUnit = () => {
+      const random = new Uint32Array(1);
+      window.crypto.getRandomValues(random);
+      return random[0] / 2 ** 32;
+    };
+    const offsetLat = (secureRandomUnit() - 0.5) * 0.08;
+    const offsetLng = (secureRandomUnit() - 0.5) * 0.08;
 
     const latVal = parcel.latitude !== undefined && !isNaN(parcel.latitude) ? parcel.latitude : (baseLat + offsetLat);
     const lngVal = parcel.longitude !== undefined && !isNaN(parcel.longitude) ? parcel.longitude : (baseLng + offsetLng);

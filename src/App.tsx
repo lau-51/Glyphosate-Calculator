@@ -261,6 +261,9 @@ export default function App() {
   const [newParcelLat, setNewParcelLat] = useState('');
   const [newParcelLng, setNewParcelLng] = useState('');
   const [activeMapParcelId, setActiveMapParcelId] = useState<string | null>(null);
+  const [deleteConfirmParcelId, setDeleteConfirmParcelId] = useState<string | null>(null);
+  const [deleteConfirmGroupId, setDeleteConfirmGroupId] = useState<string | null>(null);
+  const [deleteConfirmApplicatorId, setDeleteConfirmApplicatorId] = useState<string | null>(null);
 
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupSelectedParcelles, setNewGroupSelectedParcelles] = useState<string[]>([]);
@@ -957,13 +960,8 @@ export default function App() {
     // Default base coordinates (Burgundy wine region)
     const baseLat = 47.15;
     const baseLng = 4.93;
-    const secureRandomUnit = () => {
-      const random = new Uint32Array(1);
-      window.crypto.getRandomValues(random);
-      return random[0] / 2 ** 32;
-    };
-    const offsetLat = (secureRandomUnit() - 0.5) * 0.08;
-    const offsetLng = (secureRandomUnit() - 0.5) * 0.08;
+    const offsetLat = (Math.random() - 0.5) * 0.08;
+    const offsetLng = (Math.random() - 0.5) * 0.08;
 
     const latVal = parcel.latitude !== undefined && !isNaN(parcel.latitude) ? parcel.latitude : (baseLat + offsetLat);
     const lngVal = parcel.longitude !== undefined && !isNaN(parcel.longitude) ? parcel.longitude : (baseLng + offsetLng);
@@ -1558,6 +1556,144 @@ export default function App() {
   return (
     <div className={`transition-all duration-350 min-h-screen ${isDarkMode ? 'bg-[#0f172a] text-slate-100' : 'bg-[#f8fafc] text-slate-800'} font-sans selection:bg-emerald-600 selection:text-white pb-10 flex flex-col justify-start items-center w-full`}>
       
+      {/* ====== MODALS DE CONFIRMATION DE SUPPRESSION ====== */}
+      {deleteConfirmParcelId && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in pointer-events-auto">
+          <div className={`w-full max-w-md p-6 rounded-2xl border shadow-xl ${
+            isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-150 text-slate-800'
+          }`}>
+            <div className="flex items-start gap-x-3.5 mb-4">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-600 shrink-0">
+                <AlertTriangle className="w-5.5 h-5.5" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Confirmer la suppression</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  Êtes-vous sûr de vouloir supprimer la parcelle <strong className="text-slate-850 dark:text-white font-bold">"{exploitationData.parcelles.find(p => p.id === deleteConfirmParcelId)?.name}"</strong> ? 
+                  Cette action est définitive et retirera également cette parcelle de vos éventuels groupements de culture.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmParcelId(null)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                  isDarkMode 
+                    ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300' 
+                    : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                }`}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirmParcelId) {
+                    handleDeleteParcelle(deleteConfirmParcelId);
+                    setDeleteConfirmParcelId(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shadow-md"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmGroupId && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in pointer-events-auto">
+          <div className={`w-full max-w-md p-6 rounded-2xl border shadow-xl ${
+            isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-150 text-slate-800'
+          }`}>
+            <div className="flex items-start gap-x-3.5 mb-4">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-600 shrink-0">
+                <AlertTriangle className="w-5.5 h-5.5" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Supprimer le groupement</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  Êtes-vous sûr de vouloir dissoudre le groupement <strong className="text-slate-850 dark:text-white font-bold">"{exploitationData.groupements.find(g => g.id === deleteConfirmGroupId)?.name}"</strong> ? 
+                  Les parcelles associées à ce groupement ne seront pas supprimées.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmGroupId(null)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                  isDarkMode 
+                    ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300' 
+                    : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                }`}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirmGroupId) {
+                    handleDeleteGroupement(deleteConfirmGroupId);
+                    setDeleteConfirmGroupId(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shadow-md"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmApplicatorId && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in pointer-events-auto">
+          <div className={`w-full max-w-md p-6 rounded-2xl border shadow-xl ${
+            isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-150 text-slate-800'
+          }`}>
+            <div className="flex items-start gap-x-3.5 mb-4">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-600 shrink-0">
+                <AlertTriangle className="w-5.5 h-5.5" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Supprimer l'applicateur</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                  Êtes-vous sûr de vouloir supprimer l'applicateur <strong className="text-slate-850 dark:text-white font-bold">"{exploitationData.applicators.find(a => a.id === deleteConfirmApplicatorId)?.name}"</strong> ?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmApplicatorId(null)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                  isDarkMode 
+                    ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-300' 
+                    : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                }`}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirmApplicatorId) {
+                    handleDeleteApplicator(deleteConfirmApplicatorId);
+                    setDeleteConfirmApplicatorId(null);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shadow-md"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. LAYER VISIBLE SCREEN (Caché à l'impression) */}
       <div className="print:hidden w-full flex flex-col items-center">
         {/* Background ambience blur - extremely subtle and clean */}
@@ -2159,7 +2295,7 @@ export default function App() {
                               </div>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteApplicator(item.id)}
+                                onClick={() => setDeleteConfirmApplicatorId(item.id)}
                                 className="p-1 px-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
                                 title="Supprimer cet applicateur"
                               >
@@ -2275,7 +2411,7 @@ export default function App() {
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => handleDeleteParcelle(p.id)}
+                                          onClick={() => setDeleteConfirmParcelId(p.id)}
                                           className="p-1 px-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
                                           title="Supprimer cette parcelle"
                                         >
@@ -2441,7 +2577,7 @@ export default function App() {
                                   </div>
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteGroupement(g.id)}
+                                    onClick={() => setDeleteConfirmGroupId(g.id)}
                                     className="p-1 px-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
                                     title="Supprimer ce groupement"
                                   >

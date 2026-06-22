@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Parcelle } from '../types';
-import { MapPin, Info, Layers, Crosshair, HelpCircle } from 'lucide-react';
+import { MapPin, Info, Layers, Crosshair, HelpCircle, Maximize2, Minimize2 } from 'lucide-react';
 
 interface ParcellesMapProps {
   parcelles: Parcelle[];
@@ -28,6 +28,7 @@ export default function ParcellesMap({
   const tempMarkerRef = useRef<L.Marker | null>(null);
 
   const [tempCoords, setTempCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Helper to get color based on cepage or culture
   const getParcelColor = (cepage: string = '') => {
@@ -260,6 +261,15 @@ export default function ParcellesMap({
     }
   }, [parcelles, selectedParcelId, interactiveSelection]);
 
+  // Invalidate Leaflet map size on full screen toggles to ensure the canvas layout scales correctly
+  useEffect(() => {
+    if (mapRef.current) {
+      setTimeout(() => {
+        mapRef.current?.invalidateSize();
+      }, 150);
+    }
+  }, [isFullScreen]);
+
   const handleCenterOnExploitation = () => {
     if (!mapRef.current) return;
     const center = getMapCenter();
@@ -278,17 +288,17 @@ export default function ParcellesMap({
   };
 
   return (
-    <div className="space-y-3.5 text-left">
+    <div className={isFullScreen ? (isDarkMode ? "fixed inset-0 z-[99999] bg-[#0f172a] p-4 md:p-6 flex flex-col space-y-3.5 text-left" : "fixed inset-0 z-[99999] bg-[#f8fafc] p-4 md:p-6 flex flex-col space-y-3.5 text-left") : "space-y-3.5 text-left"}>
       <div className={`p-3 rounded-xl flex items-center justify-between text-xs border ${
         isDarkMode ? 'bg-slate-900/50 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-205 text-slate-600'
       }`}>
         <div className="flex items-center gap-x-2">
           <Layers className="w-4 h-4 text-emerald-500 animate-pulse" />
           <span>
-            <strong>Visualisation SIG live :</strong> Cliquez sur une parcelle pour la sélectionner.
+            <strong>Visualisation SIG live :</strong> {isFullScreen ? "Mode Plein Écran - Pressez 'Réduire' pour quitter." : "Cliquez sur une parcelle pour la sélectionner."}
           </span>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 items-center">
           <button
             type="button"
             onClick={handleCenterOnExploitation}
@@ -297,6 +307,25 @@ export default function ParcellesMap({
           >
             <Crosshair className="w-3 h-3" />
             <span>Recadrer</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsFullScreen(!isFullScreen)}
+            className="p-1 px-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/10 hover:border-emerald-500/25 rounded-md font-bold transition-all text-[10px] flex items-center gap-x-1 cursor-pointer"
+            title={isFullScreen ? "Quitter le plein écran" : "Plein écran"}
+          >
+            {isFullScreen ? (
+              <>
+                <Minimize2 className="w-3 h-3" />
+                <span>Réduire</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3 h-3" />
+                <span>Plein écran</span>
+              </>
+            )}
           </button>
           
           {tempCoords && (
@@ -313,7 +342,9 @@ export default function ParcellesMap({
 
       {/* Actual Map Containment Stage */}
       <div 
-        className="relative rounded-2xl overflow-hidden border border-slate-300/80 dark:border-slate-800 shadow-md h-[360px] md:h-[460px] w-full"
+        className={`relative rounded-2xl overflow-hidden border border-slate-300/80 dark:border-slate-800 shadow-md w-full transition-all duration-300 ${
+          isFullScreen ? 'flex-1 h-full' : 'h-[360px] md:h-[460px]'
+        }`}
         style={{ zIndex: 1 }}
       >
         <div ref={mapContainerRef} className="w-full h-full" id="agricultural-gis-canvas" />

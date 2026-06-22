@@ -129,7 +129,6 @@ async function startServer() {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     var express = require('express');
-var app = express();
 
 // set up rate limiter: maximum of five requests per minute
 var RateLimit = require('express-rate-limit');

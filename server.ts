@@ -153,3 +153,4 @@ app.get('/:path', function(req, res) {
 }
 
 startServer();
+}

@@ -4652,8 +4652,10 @@ export default function App() {
                             return (
                               <div
                                 key={idx}
-                                className={`p-3.5 border rounded-2xl flex flex-col justify-between text-xs transition-all ${
-                                  isDarkMode ? 'bg-slate-950/30 border-slate-850 hover:bg-slate-950/50' : 'bg-white border-slate-200 hover:shadow-xs'
+                                className={`p-3.5 border rounded-3xl flex flex-col justify-between text-xs transition-all shadow-md ${
+                                  isDarkMode 
+                                    ? 'bg-slate-950/30 border-slate-850/80 hover:bg-slate-950/50 shadow-slate-950/40' 
+                                    : 'bg-white border-slate-200/80 shadow-slate-100/70 hover:shadow-lg'
                                 }`}
                               >
                                 <div className="flex justify-between items-start mb-2.5">

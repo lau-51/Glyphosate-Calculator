@@ -132,7 +132,23 @@ async function startServer() {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
+var express = require('express');
+var app = express();
 
+// set up rate limiter: maximum of five requests per minute
+var RateLimit = require('express-rate-limit');
+var limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
+
+// apply rate limiter to all requests
+app.use(limiter);
+
+app.get("*", function(req, res) {
+  res.sendFile(path.join(distPath, "index.html"));
+});
+  
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server listening on port ${PORT}`);
   });

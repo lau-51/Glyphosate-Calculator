@@ -353,8 +353,25 @@ export default function App() {
   const handleAiImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const allowedImageTypes = new Set([
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp',
+      'image/gif'
+    ]);
+
+    if (!allowedImageTypes.has(file.type)) {
+      setAiImagePreview(null);
+      setAiImageBase64(null);
+      return;
+    }
     
     // Create preview
+    if (aiImagePreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(aiImagePreview);
+    }
     const previewUrl = URL.createObjectURL(file);
     setAiImagePreview(previewUrl);
 

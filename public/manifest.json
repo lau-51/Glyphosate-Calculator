@@ -1,6 +1,6 @@
 {
-  "name": "Calculateur de Dose Glyphosate",
-  "short_name": "Dose Glypho",
+  "name": "Calculateur de dosage de glyphosate",
+  "short_name": "Dosage Glypho",
   "description": "Calculateur professionnel de dosage d'herbicide et d'aide au remplissage de cuve.",
   "id": "./",
   "scope": "./",

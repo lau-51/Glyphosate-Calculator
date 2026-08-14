@@ -141,9 +141,9 @@ var limiter = RateLimit({
 app.use(limiter);
 
 app.get('/:path', function(req, res) {
-  let path = req.params.path;
-  if (isValidPath(path))
-    res.sendFile(path);
+  let path.resolve = req.params.path.resolve;
+  if (isValidPath(path.resolve))
+    res.sendFile(path.resolve);
 });
   }
   

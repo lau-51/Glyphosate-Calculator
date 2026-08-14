@@ -128,7 +128,6 @@ async function startServer() {
     console.log("Starting server in PRODUCTION mode serving from dist/...");
     const distPath = path.join(process.cwd(), "dist");
     var express = require('express');
-var app = express();
 
 // set up rate limiter: maximum of five requests per minute
 var RateLimit = require('express-rate-limit');

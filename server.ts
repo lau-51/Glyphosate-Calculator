@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
@@ -10,8 +11,26 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Behind a proxy (Cloud Run, etc.), trust the first hop so client IPs are correct
+  app.set("trust proxy", 1);
+
   // Let's accept JSON with sufficient limit for base64 images
   app.use(express.json({ limit: "30mb" }));
+
+  // Rate limiting: protects the paid Gemini endpoint and file-serving routes
+  const aiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { error: "Trop de requêtes. Veuillez réessayer dans quelques minutes." },
+  });
+  const staticLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 300,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+  });
 
   // Initialize server-side Gemini client securely
   const genaiApiKey = process.env.GEMINI_API_KEY;
@@ -25,7 +44,7 @@ async function startServer() {
   });
 
   // API endpoints FIRST
-  app.post("/api/ai/chat", async (req, res) => {
+  app.post("/api/ai/chat", aiLimiter, async (req, res) => {
     try {
       if (!genaiApiKey) {
         return res.status(403).json({
@@ -127,6 +146,7 @@ async function startServer() {
   } else {
     console.log("Starting server in PRODUCTION mode serving from dist/...");
     const distPath = path.join(process.cwd(), "dist");
+    app.use(staticLimiter);
     app.use(express.static(distPath));
     // SPA fallback: /api routes are registered above
     app.get("*", (req, res, next) => {
